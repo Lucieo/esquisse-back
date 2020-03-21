@@ -1,0 +1,26 @@
+{
+  "name": "esquisse-api",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon server.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "apollo-datasource": "^0.7.0",
+    "apollo-datasource-rest": "^0.8.0",
+    "apollo-server-express": "^2.11.0",
+    "apollo-server-testing": "^2.11.0",
+    "bcrypt": "^4.0.1",
+    "express": "^4.17.1",
+    "express-session": "^1.17.0",
+    "graphql": "^14.6.0",
+    "graphql-passport": "^0.6.3",
+    "mongoose": "^5.9.5",
+    "nodemon": "^2.0.2",
+    "passport": "^0.4.1"
+  }
+}
