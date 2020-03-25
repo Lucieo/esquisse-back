@@ -18,6 +18,14 @@ const userSchema = new Schema({
     admin:{
         type: Boolean,
         default: false
+    },
+    icon: {
+        type: String,
+        default: 'tag_faces'
+    },
+    iconColor: {
+        type: String,
+        default: '#000000'
     }
 })
 

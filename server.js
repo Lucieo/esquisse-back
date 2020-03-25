@@ -1,67 +1,51 @@
 const { ApolloServer } = require('apollo-server-express');
 const express = require('express');
-const session = require('express-session');
-const passport = require('passport');
-const uuid = require('uuid/v4');
 const User = require('./models/user');
-const { GraphQLLocalStrategy, buildContext } = require('graphql-passport');
 const typeDefs = require('./schema/types');
 const resolvers = require('./schema/resolvers');
 const mongoose = require('mongoose');
-const bcrypt = require('bcrypt');
+var cors = require('cors');
+const jwt = require('jsonwebtoken');
 
 const app = express();
 const MONGO_URI = `mongodb+srv://${process.env.MONGO_ADMIN}:${process.env.MONGO_PASSWORD}@cluster0-jjo7q.mongodb.net/${process.env.MONGO_DB}`;
+console.log(MONGO_URI)
+const corsOptions = {
+    origin: 'http://localhost:3000',
+    credentials: true,
+  };
+app.use(cors(corsOptions));
+
+const getUser = async (token) => {
+  try {
+    if (token) {
+      const id = await jwt.verify(token.split(' ')[1], process.env.SESSION_SECRET).id
+      const user = await User.findById(id);
+      return user
+    }
+    return null
+  } catch (err) {
+    return null
+  }
+}
 
 
-passport.use(
-    new GraphQLLocalStrategy(async (email, password, done) => {
-        let error = null;
-        let matchingUser = null;
-        const user = await User.findOne({email});
-        if(!user){
-            error = new Error('no matching user')
-        }
-        else{
-            const matchingPassword = await bcrypt.compare(password, user.password);
-            if(!matchingPassword){
-                error = new Error('invalid credentials')
-            }else{
-                matchingUser = user;
-            }
-        }
-      done(error, matchingUser);
-    }),
-);
-
-passport.serializeUser((user, done) => {
-    done(null, user.id);
-});
-  
-passport.deserializeUser((id, done) => {
-    User.findById(id, (err, user) => {
-        done(err, user);
-    });
-});
-
-app.use(session({
-    genid: (req) => uuid(),
-    secret: process.env.SESSION_SECRECT,
-    resave: false,
-    saveUninitialized: false,
-}));
-  
-app.use(passport.initialize());
-app.use(passport.session());
 
 const server = new ApolloServer({
     typeDefs,
     resolvers,
-    context: ({ req, res }) => buildContext({ 
-        req, 
-        res, 
-        User 
-    }),
+    context: async ({ req, connection }) => {
+        if (connection) {
+          return connection.context;
+        } 
+        else{
+          const token = req.headers.authorization || '';
+          const user = await getUser(token)
+          return {
+            user
+          }
+        }
+    },
     playground: {
       settings: {
         'request.credentials': 'same-origin',
@@ -69,12 +53,18 @@ const server = new ApolloServer({
     },
   });
 
-server.applyMiddleware({ app });
+const http = require('http');
+server.applyMiddleware({app})
+const httpServer = http.createServer(app);
+server.installSubscriptionHandlers(httpServer);
 
+
+const PORT = 4000;
 mongoose
 .connect(MONGO_URI)
 .then(result=>{
-    app.listen({ port: 4000 }, () => {
-        console.log(`🚀 Server ready at http://localhost:4000`);
-    });
+  httpServer.listen(PORT, () => {
+    console.log(`🚀 Server ready at http://localhost:${PORT}${server.graphqlPath}`)
+    console.log(`🚀 Subscriptions ready at ws://localhost:${PORT}${server.subscriptionsPath}`)
+  })
 })
