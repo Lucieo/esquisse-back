@@ -16,23 +16,34 @@ type Game{
     id: ID,
     status: String,
     creator: ID,
-    players: [ID]
+    players: [User]
 }
 type CreatedGame{
     gameId:ID
 }
+type PlayerModifyResponse{
+    player: User,
+    gameId: ID
+}
+type GameStatusChangeResponse{
+    status: String,
+    gameId: ID
+}
 type Query {
-    currentUser: User!
+    currentUser: User!,
+    getGameInfo(gameId: ID): Game!
 }
 type Mutation {
     signup(name: String!, email: String!, password: String!): User!
     login(email: String!, password: String!): LoginResponse!,
     modifyUser(name: String!, icon: String!, iconColor: String!): User!
-    createGame: CreatedGame,
+    createGame: CreatedGame
     joinGame(gameId: ID!): Game
+    changeGameStatus(gameId: ID!, newStatus: String!): GameStatusChangeResponse
 }
 type Subscription {
-    playersJoined: [User]
+    playerJoined(gameId: ID!): PlayerModifyResponse
+    gameStatusChange(gameId: ID!): GameStatusChangeResponse
 }
 
 `;

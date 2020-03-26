@@ -14,7 +14,15 @@ const gameSchema = new Schema({
     status: {
         type: String,
         default: "new"
-    }
+    },
+    turn:{
+        type: Number,
+        default: 0
+    },
+    sketchbooks:[{
+        type: Schema.Types.ObjectId,
+        ref: 'SketchBook'
+    }]
 })
 
 
