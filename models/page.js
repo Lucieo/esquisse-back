@@ -7,10 +7,12 @@ const pageSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: 'User'
     },
-    pages:[{
-        type: Schema.Types.ObjectId,
-        ref: 'Page'
-    }]
+    pageType:{
+        type: String
+    },
+    content:{
+        type: String
+    }
 })
 
 

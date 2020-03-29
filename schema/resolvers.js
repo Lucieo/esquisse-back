@@ -2,6 +2,8 @@
 const bcrypt = require('bcrypt');
 const User = require('../models/user');
 const Game = require('../models/game');
+const Sketchbook = require('../models/sketchbook');
+const Page = require('../models/page');
 const jwt = require('jsonwebtoken');
 const { PubSub } = require('apollo-server-express');
 const { withFilter } = require('apollo-server-express');
@@ -20,6 +22,11 @@ const resolvers = {
     getGameInfo: async(parent, {gameId}, {user})=>{
       const game = await Game.findById(gameId).populate('players');
       return game
+    },
+    getSketchbookInfo: async(parent, {sketchbookId}, context)=>{
+      const sketchbook = await Sketchbook.findById(sketchbookId).populate('pages');
+      console.log("SKETCHBOOK INFO", sketchbook)
+      return sketchbook;
     }
   },
   Mutation: {
@@ -78,7 +85,7 @@ const resolvers = {
       });
       game.save();
       return {
-        gameId: game.id
+        id: game.id
       };
     },
     joinGame: async (parent, {gameId}, context)=>{
@@ -103,13 +110,31 @@ const resolvers = {
       console.log("GAME STATUS CHANGE MUTATION CALLED")
       const game = await Game.findById(gameId);
       game.status = newStatus;
-      game.save();
-      const response = {
-        gameId,
-        status: newStatus
+      if(newStatus==="active"){
+        game.players.forEach(
+          creator=>{
+            const sketchbook = new Sketchbook({
+              creator
+            });
+            sketchbook.save()
+            game.sketchbooks.push(sketchbook)
+          }
+        )
       }
-      pubsub.publish("GAME_STATUS_CHANGE", { gameStatusChange: response});
-      return response;
+      game.save();
+      pubsub.publish("GAME_UPDATE", { gameUpdate: game});
+      return game;
+    },
+    submitPage: async(parent, {sketchbookId, content, pageType, gameId}, {user})=>{
+      const sketchbook = await Sketchbook.findById(sketchbookId);
+      const page = new Page({
+        content,
+        pageType,
+        creator: user
+      });
+      page.save();
+      sketchbook.pages.push(page);
+      const game = await Game.findById(gameId);
     }
   },
   Subscription: {
@@ -124,18 +149,15 @@ const resolvers = {
         },
       ),
     },
-    gameStatusChange: {
+    gameUpdate: {
       subscribe: withFilter(
         () => {
-          console.log('SUBSCRIPTION GAME STATUS CHANGE');
-          return pubsub.asyncIterator(["GAME_STATUS_CHANGE"])
+          console.log('SUBSCRIPTION GAME UPDATE INITIATED');
+          return pubsub.asyncIterator(["GAME_UPDATE"])
         },
         (payload, variables) => {
-          console.log('GAME STATUS CHANGE SUB CALLED')
-          console.log('payload', payload.gameStatusChange.gameId)
-          console.log('var', variables.gameId)
-          console.log(payload.gameStatusChange.gameId === variables.gameId)
-         return payload.gameStatusChange.gameId === variables.gameId;
+          console.log('SHOULD PASSE GAME UPDATE NEWS? ', payload.gameUpdate.id === variables.gameId )
+         return payload.gameUpdate.id === variables.gameId;
         },
       )
     }

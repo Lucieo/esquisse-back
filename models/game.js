@@ -22,6 +22,10 @@ const gameSchema = new Schema({
     sketchbooks:[{
         type: Schema.Types.ObjectId,
         ref: 'SketchBook'
+    }],
+    responses: [{
+        type: Schema.Types.ObjectId,
+        ref: 'User'
     }]
 })
 
