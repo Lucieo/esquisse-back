@@ -21,7 +21,7 @@ const gameSchema = new Schema({
     },
     sketchbooks:[{
         type: Schema.Types.ObjectId,
-        ref: 'SketchBook'
+        ref: 'Sketchbook'
     }],
     responses: [{
         type: Schema.Types.ObjectId,

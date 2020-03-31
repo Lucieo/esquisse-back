@@ -12,6 +12,10 @@ const pageSchema = new Schema({
     },
     content:{
         type: String
+    },
+    sketchbook:{
+        type: Schema.Types.ObjectId,
+        ref: 'Sketchbook'
     }
 })
 

@@ -27,6 +27,21 @@ const resolvers = {
       const sketchbook = await Sketchbook.findById(sketchbookId).populate('pages');
       console.log("SKETCHBOOK INFO", sketchbook)
       return sketchbook;
+    },
+    getAllSketchbooks: async(parent, {gameId}, context)=>{
+      console.log('END OF GAME')
+      const endOfGame= await Game
+      .findById(gameId)
+      .populate({
+        path:'sketchbooks',
+        populate:{
+          path:"pages",
+          populate:{
+            path:"creator"
+          }
+        },
+      })
+      return endOfGame.sketchbooks
     }
   },
   Mutation: {
@@ -89,26 +104,47 @@ const resolvers = {
       };
     },
     joinGame: async (parent, {gameId}, context)=>{
-      const game = await Game.findById(gameId);
+      const game = await Game.findById(gameId).populate('players');
       if(game.players.indexOf(context.user.id)<0){
         game.players.push(context.user);
         await game.save();
       }
-      pubsub.publish("PLAYER_JOINED", { playerJoined: {
-        player:{
-          id: context.user.id,
-          email :context.user.email,
-          name: context.user.name,
-          icon: context.user.icon,
-          iconColor: context.user.iconColor
-        },
-        gameId
+      console.log("GAME CREATOR JOIN",  game.creator, typeof(game.creator))
+      pubsub.publish("PLAYER_UPDATE", { 
+        playerUpdate: {
+          players:game.players,
+          gameId: game.id,
+          creator: game.creator
+      } });
+      return game
+    },
+    leaveGame: async (parent, {gameId}, context)=>{
+      console.log('LEAVE GAME CALLED')
+      const game = await Game.findById(gameId).populate('players');
+      if(game.players.indexOf(context.user.id)<0){
+        game.players = game.players.filter(user=>{
+          return user.id!==context.user.id
+        });
+        if(game.players.length===0) game.status = "abandonned"
+        if((game.creator.toString()===context.user.id.toString()) && game.players.length>0){
+          const newCreator = game.players[0].id
+          console.log('NEW CREATOR', newCreator)
+          game.creator = newCreator
+        }
+        await game.save();
+      }
+      console.log("GAME CREATOR LEAVE",  game.creator, typeof(game.creator))
+      pubsub.publish("PLAYER_UPDATE", { 
+        playerUpdate: {
+          players:game.players,
+          gameId: game.id,
+          creator: game.creator
       } });
       return game
     },
     changeGameStatus: async (parent, {gameId, newStatus}, context)=>{
       console.log("GAME STATUS CHANGE MUTATION CALLED")
-      const game = await Game.findById(gameId);
+      const game = await Game.findById(gameId).populate('players');
       game.status = newStatus;
       if(newStatus==="active"){
         game.players.forEach(
@@ -126,26 +162,52 @@ const resolvers = {
       return game;
     },
     submitPage: async(parent, {sketchbookId, content, pageType, gameId}, {user})=>{
+      console.log('SUBMIT PAGE RECEIVED')
       const sketchbook = await Sketchbook.findById(sketchbookId);
       const page = new Page({
         content,
         pageType,
-        creator: user
+        creator: user,
+        sketchbook: sketchbookId
       });
-      page.save();
+      await page.save();
       sketchbook.pages.push(page);
+      await sketchbook.save();
+
       const game = await Game.findById(gameId);
+      game.responses.push(user.id)
+      await game.save();
+
+      const gameCheck = await Game.findById(gameId).populate('players');
+      if((game.turn===gameCheck.turn) && (game.status!=='over') && (gameCheck.responses.length===gameCheck.players.length)){
+        endOfTurn= true;
+        gameCheck.responses=[]
+        //is it last turn?
+        if(gameCheck.turn+1===gameCheck.players.length){
+          gameCheck.status="over"
+        }
+        else{
+          gameCheck.turn+=1
+        }
+        await gameCheck.save()
+        pubsub.publish("GAME_UPDATE", { gameUpdate: gameCheck});
+      }
+      return {
+        id : page.id
+      }
     }
   },
   Subscription: {
-    playerJoined: {
+    playerUpdate: {
       subscribe: withFilter(
         () => {
           console.log('PLAYER JOINED SUB INITIATED')
-          return pubsub.asyncIterator(["PLAYER_JOINED"])
+          return pubsub.asyncIterator(["PLAYER_UPDATE"])
         },
         (payload, variables) => {
-         return payload.playerJoined.gameId === variables.gameId;
+          console.log("SHOULD PASS PLAYER UPDATE NEWS?")
+          console.log(" payload.playerUpdate.gameId === variables.gameId",  payload.playerUpdate.gameId === variables.gameId)
+         return payload.playerUpdate.gameId === variables.gameId;
         },
       ),
     },
@@ -156,6 +218,8 @@ const resolvers = {
           return pubsub.asyncIterator(["GAME_UPDATE"])
         },
         (payload, variables) => {
+          console.log('payload.gameUpdate.id', payload.gameUpdate.id)
+          console.log('variables.gameId', variables.gameId)
           console.log('SHOULD PASSE GAME UPDATE NEWS? ', payload.gameUpdate.id === variables.gameId )
          return payload.gameUpdate.id === variables.gameId;
         },

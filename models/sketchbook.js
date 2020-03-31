@@ -10,11 +10,7 @@ const sketchBookSchema = new Schema({
     pages:[{
         type: Schema.Types.ObjectId,
         ref: 'Page'
-    }],
-    drawingMode:{
-        type: Boolean,
-        default: false
-    }
+    }]
 })
 
 

@@ -20,7 +20,7 @@ type Sketchbook {
 type Page{
     content: String
     pageType: String
-    creator: ID
+    creator: User
 }
 type Game{
     id: ID
@@ -34,8 +34,9 @@ type CreatedGame{
     id:ID
 }
 type PlayerModifyResponse{
-    player: User,
-    id: ID
+    players: [User],
+    gameId: ID,
+    creator: ID
 }
 type submitPageResponse{
     id: ID
@@ -44,6 +45,7 @@ type Query {
     currentUser: User!,
     getGameInfo(gameId: ID): Game!
     getSketchbookInfo(sketchbookId: ID!): Sketchbook!
+    getAllSketchbooks(gameId: ID!): [Sketchbook]
 }
 type Mutation {
     signup(name: String!, email: String!, password: String!): User!
@@ -51,11 +53,12 @@ type Mutation {
     modifyUser(name: String!, icon: String!, iconColor: String!): User!
     createGame: CreatedGame
     joinGame(gameId: ID!): Game
+    leaveGame(gameId: ID!): Game
     changeGameStatus(gameId: ID!, newStatus: String!): Game
-    submitPage(sketchBookId: ID!, gameId: ID!, content: String!, pageType: String!): submitPageResponse!
+    submitPage(sketchbookId: ID!, gameId: ID!, content: String!, pageType: String!): submitPageResponse!
 }
 type Subscription {
-    playerJoined(gameId: ID!): PlayerModifyResponse
+    playerUpdate(gameId: ID!): PlayerModifyResponse
     gameUpdate(gameId: ID!): Game
 }
 
