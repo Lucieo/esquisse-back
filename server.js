@@ -6,8 +6,12 @@ const resolvers = require('./schema/resolvers');
 const mongoose = require('mongoose');
 var cors = require('cors');
 const jwt = require('jsonwebtoken');
+const {json} = require('express')
 
 const app = express();
+
+
+app.use(json({ limit: '2mb' }))
 const MONGO_URI = `mongodb+srv://${process.env.MONGO_ADMIN}:${process.env.MONGO_PASSWORD}@cluster0-jjo7q.mongodb.net/${process.env.MONGO_DB}`;
 console.log(MONGO_URI)
 const corsOptions = {

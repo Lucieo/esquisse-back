@@ -20,7 +20,7 @@ const resolvers = {
       return user
     },
     getGameInfo: async(parent, {gameId}, {user})=>{
-      const game = await Game.findById(gameId).populate('players');
+      const game = await Game.findById(gameId).populate('players').populate('sketchbooks');
       return game
     },
     getSketchbookInfo: async(parent, {sketchbookId}, context)=>{
@@ -42,6 +42,11 @@ const resolvers = {
         },
       })
       return endOfGame.sketchbooks
+    },
+    getLastUserGames: async(parent, {}, context)=>{
+      const games = await Game.find({players:{$all:[context.user.id]},status:"over"}, {status:1})
+      .limit( 5 )
+      return games
     }
   },
   Mutation: {
@@ -158,11 +163,12 @@ const resolvers = {
         )
       }
       game.save();
+      console.log("GAME UPDATE SKETCHBOOK ", game.sketchbooks)
       pubsub.publish("GAME_UPDATE", { gameUpdate: game});
       return game;
     },
     submitPage: async(parent, {sketchbookId, content, pageType, gameId}, {user})=>{
-      console.log('SUBMIT PAGE RECEIVED')
+      console.log('SUBMIT PAGE RECEIVED FROM ', user.name)
       const sketchbook = await Sketchbook.findById(sketchbookId);
       const page = new Page({
         content,
@@ -175,10 +181,11 @@ const resolvers = {
       await sketchbook.save();
 
       const game = await Game.findById(gameId);
+      console.log("GAME RESPONSES STATE FOR USER ", user.name, game.responses)
       game.responses.push(user.id)
       await game.save();
 
-      const gameCheck = await Game.findById(gameId).populate('players');
+      const gameCheck = await Game.findById(gameId).populate('players').populate('sketchbooks');
       if((game.turn===gameCheck.turn) && (game.status!=='over') && (gameCheck.responses.length===gameCheck.players.length)){
         endOfTurn= true;
         gameCheck.responses=[]

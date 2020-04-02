@@ -27,7 +27,7 @@ type Game{
     status: String
     creator: ID
     players: [User]
-    sketchbooks: [ID]
+    sketchbooks: [Sketchbook]
     turn: Int
 }
 type CreatedGame{
@@ -41,11 +41,17 @@ type PlayerModifyResponse{
 type submitPageResponse{
     id: ID
 }
+type allGamesResponse{
+    status: String
+    id: ID
+}
+
 type Query {
     currentUser: User!,
     getGameInfo(gameId: ID): Game!
     getSketchbookInfo(sketchbookId: ID!): Sketchbook!
     getAllSketchbooks(gameId: ID!): [Sketchbook]
+    getLastUserGames: [allGamesResponse]
 }
 type Mutation {
     signup(name: String!, email: String!, password: String!): User!
