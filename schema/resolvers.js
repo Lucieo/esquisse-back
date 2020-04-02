@@ -25,7 +25,6 @@ const resolvers = {
     },
     getSketchbookInfo: async(parent, {sketchbookId}, context)=>{
       const sketchbook = await Sketchbook.findById(sketchbookId).populate('pages');
-      console.log("SKETCHBOOK INFO", sketchbook)
       return sketchbook;
     },
     getAllSketchbooks: async(parent, {gameId}, context)=>{
@@ -114,7 +113,6 @@ const resolvers = {
         game.players.push(context.user);
         await game.save();
       }
-      console.log("GAME CREATOR JOIN",  game.creator, typeof(game.creator))
       pubsub.publish("PLAYER_UPDATE", { 
         playerUpdate: {
           players:game.players,
@@ -124,7 +122,6 @@ const resolvers = {
       return game
     },
     leaveGame: async (parent, {gameId}, context)=>{
-      console.log('LEAVE GAME CALLED')
       const game = await Game.findById(gameId).populate('players');
       if(game.players.indexOf(context.user.id)<0){
         game.players = game.players.filter(user=>{
@@ -133,12 +130,10 @@ const resolvers = {
         if(game.players.length===0) game.status = "abandonned"
         if((game.creator.toString()===context.user.id.toString()) && game.players.length>0){
           const newCreator = game.players[0].id
-          console.log('NEW CREATOR', newCreator)
           game.creator = newCreator
         }
         await game.save();
       }
-      console.log("GAME CREATOR LEAVE",  game.creator, typeof(game.creator))
       pubsub.publish("PLAYER_UPDATE", { 
         playerUpdate: {
           players:game.players,
@@ -148,7 +143,6 @@ const resolvers = {
       return game
     },
     changeGameStatus: async (parent, {gameId, newStatus}, context)=>{
-      console.log("GAME STATUS CHANGE MUTATION CALLED")
       const game = await Game.findById(gameId).populate('players');
       game.status = newStatus;
       if(newStatus==="active"){
@@ -163,12 +157,10 @@ const resolvers = {
         )
       }
       game.save();
-      console.log("GAME UPDATE SKETCHBOOK ", game.sketchbooks)
       pubsub.publish("GAME_UPDATE", { gameUpdate: game});
       return game;
     },
     submitPage: async(parent, {sketchbookId, content, pageType, gameId}, {user})=>{
-      console.log('SUBMIT PAGE RECEIVED FROM ', user.name)
       const sketchbook = await Sketchbook.findById(sketchbookId);
       const page = new Page({
         content,
@@ -181,7 +173,6 @@ const resolvers = {
       await sketchbook.save();
 
       const game = await Game.findById(gameId);
-      console.log("GAME RESPONSES STATE FOR USER ", user.name, game.responses)
       game.responses.push(user.id)
       await game.save();
 
@@ -208,26 +199,18 @@ const resolvers = {
     playerUpdate: {
       subscribe: withFilter(
         () => {
-          console.log('PLAYER JOINED SUB INITIATED')
           return pubsub.asyncIterator(["PLAYER_UPDATE"])
         },
         (payload, variables) => {
-          console.log("SHOULD PASS PLAYER UPDATE NEWS?")
-          console.log(" payload.playerUpdate.gameId === variables.gameId",  payload.playerUpdate.gameId === variables.gameId)
          return payload.playerUpdate.gameId === variables.gameId;
         },
       ),
     },
     gameUpdate: {
       subscribe: withFilter(
-        () => {
-          console.log('SUBSCRIPTION GAME UPDATE INITIATED');
-          return pubsub.asyncIterator(["GAME_UPDATE"])
+        () => {          return pubsub.asyncIterator(["GAME_UPDATE"])
         },
         (payload, variables) => {
-          console.log('payload.gameUpdate.id', payload.gameUpdate.id)
-          console.log('variables.gameId', variables.gameId)
-          console.log('SHOULD PASSE GAME UPDATE NEWS? ', payload.gameUpdate.id === variables.gameId )
          return payload.gameUpdate.id === variables.gameId;
         },
       )
