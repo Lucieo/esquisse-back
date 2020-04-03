@@ -28,7 +28,6 @@ const resolvers = {
       return sketchbook;
     },
     getAllSketchbooks: async(parent, {gameId}, context)=>{
-      console.log('END OF GAME')
       const endOfGame= await Game
       .findById(gameId)
       .populate({
@@ -43,8 +42,19 @@ const resolvers = {
       return endOfGame.sketchbooks
     },
     getLastUserGames: async(parent, {}, context)=>{
-      const games = await Game.find({players:{$all:[context.user.id]},status:"over"}, {status:1})
-      .limit( 5 )
+      const games = await Game
+      .find({players:{$all:[context.user.id]},status:"over"}, {status:1})
+      .sort({_id:-1})
+      .populate({
+        path:'sketchbooks',
+        populate:{
+          path:"pages",
+          populate:{
+            path:"creator"
+          }
+        },
+      })
+      .limit(1)
       return games
     }
   },
@@ -143,21 +153,26 @@ const resolvers = {
       return game
     },
     changeGameStatus: async (parent, {gameId, newStatus}, context)=>{
-      const game = await Game.findById(gameId).populate('players');
-      game.status = newStatus;
-      if(newStatus==="active"){
-        game.players.forEach(
-          creator=>{
-            const sketchbook = new Sketchbook({
-              creator
-            });
-            sketchbook.save()
-            game.sketchbooks.push(sketchbook)
-          }
-        )
+      console.log('GAME STATUS CHANGE new status ', newStatus)
+      const game = await Game.findById(gameId).populate('players').populate('sketchbooks');
+      if(game.status!==newStatus && context.user.id===game.creator.toString()){
+        console.log('OK LETS CHANGE')
+        game.status = newStatus;
+        if(newStatus==="active"){
+          game.players.forEach(
+            creator=>{
+              const sketchbook = new Sketchbook({
+                creator
+              });
+              sketchbook.save()
+              game.sketchbooks.push(sketchbook)
+            }
+          )
+        }
+        game.save();
+        console.log('GAME OBJ SENT ', game)
+        pubsub.publish("GAME_UPDATE", { gameUpdate: game});
       }
-      game.save();
-      pubsub.publish("GAME_UPDATE", { gameUpdate: game});
       return game;
     },
     submitPage: async(parent, {sketchbookId, content, pageType, gameId}, {user})=>{
@@ -172,24 +187,11 @@ const resolvers = {
       sketchbook.pages.push(page);
       await sketchbook.save();
 
-      const game = await Game.findById(gameId);
-      game.responses.push(user.id)
-      await game.save();
+      pubsub.publish("SUBMIT_UPDATE", { submitUpdate: {
+        gameId,
+        user
+      }});
 
-      const gameCheck = await Game.findById(gameId).populate('players').populate('sketchbooks');
-      if((game.turn===gameCheck.turn) && (game.status!=='over') && (gameCheck.responses.length===gameCheck.players.length)){
-        endOfTurn= true;
-        gameCheck.responses=[]
-        //is it last turn?
-        if(gameCheck.turn+1===gameCheck.players.length){
-          gameCheck.status="over"
-        }
-        else{
-          gameCheck.turn+=1
-        }
-        await gameCheck.save()
-        pubsub.publish("GAME_UPDATE", { gameUpdate: gameCheck});
-      }
       return {
         id : page.id
       }
@@ -208,10 +210,23 @@ const resolvers = {
     },
     gameUpdate: {
       subscribe: withFilter(
-        () => {          return pubsub.asyncIterator(["GAME_UPDATE"])
+        () => {          
+          return pubsub.asyncIterator(["GAME_UPDATE"])
         },
         (payload, variables) => {
+          console.log('GAME UPDATE CALLED should pass ', payload.gameUpdate.id === variables.gameId)
          return payload.gameUpdate.id === variables.gameId;
+        },
+      )
+    },
+    submitUpdate: {
+      subscribe: withFilter(
+        () => {          
+          return pubsub.asyncIterator(["SUBMIT_UPDATE"])
+        },
+        (payload, variables) => {
+          console.log('SUBMIT_UPDATE CALLED')
+         return payload.submitUpdate.gameId === variables.gameId;
         },
       )
     }

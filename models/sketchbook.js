@@ -11,6 +11,9 @@ const sketchBookSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: 'Page'
     }]
+},
+{
+  timestamps: true
 })
 
 

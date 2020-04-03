@@ -42,10 +42,13 @@ type submitPageResponse{
     id: ID
 }
 type allGamesResponse{
-    status: String
+    sketchbooks: [Sketchbook]
     id: ID
 }
-
+type SubmitUpdateResponse{
+    gameId: ID,
+    user: User
+}
 type Query {
     currentUser: User!,
     getGameInfo(gameId: ID): Game!
@@ -66,8 +69,8 @@ type Mutation {
 type Subscription {
     playerUpdate(gameId: ID!): PlayerModifyResponse
     gameUpdate(gameId: ID!): Game
+    submitUpdate(gameId: ID!): SubmitUpdateResponse
 }
-
 `;
 
 module.exports = typeDefs;
