@@ -45,10 +45,6 @@ type allGamesResponse{
     sketchbooks: [Sketchbook]
     id: ID
 }
-type SubmitUpdateResponse{
-    gameId: ID,
-    user: User
-}
 type Query {
     currentUser: User!,
     getGameInfo(gameId: ID): Game!
@@ -58,19 +54,20 @@ type Query {
 }
 type Mutation {
     signup(name: String!, email: String!, password: String!): User!
-    login(email: String!, password: String!): LoginResponse!,
+    login(email: String!, password: String!): LoginResponse!
     modifyUser(name: String!, icon: String!, iconColor: String!): User!
     createGame: CreatedGame
     joinGame(gameId: ID!): Game
     leaveGame(gameId: ID!): Game
     changeGameStatus(gameId: ID!, newStatus: String!): Game
-    submitPage(sketchbookId: ID!, gameId: ID!, content: String!, pageType: String!): submitPageResponse!
+    submitPage(sketchbookId: ID!, gameId: ID!, content: String! pageType: String!): submitPageResponse!
 }
 type Subscription {
     playerUpdate(gameId: ID!): PlayerModifyResponse
     gameUpdate(gameId: ID!): Game
-    submitUpdate(gameId: ID!): SubmitUpdateResponse
+    timeToSubmit(gameId: ID!): submitPageResponse!
 }
 `;
+
 
 module.exports = typeDefs;

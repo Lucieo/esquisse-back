@@ -1,7 +1,6 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
-
 const gameSchema = new Schema({
     players: [{
         type: Schema.Types.ObjectId,
@@ -18,7 +17,11 @@ const gameSchema = new Schema({
     sketchbooks:[{
         type: Schema.Types.ObjectId,
         ref: 'Sketchbook'
-    }]
+    }],
+    turn:{
+        type: String,
+        default:0
+    }
 },
 {
   timestamps: true

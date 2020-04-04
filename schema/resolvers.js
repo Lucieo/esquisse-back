@@ -4,12 +4,11 @@ const User = require('../models/user');
 const Game = require('../models/game');
 const Sketchbook = require('../models/sketchbook');
 const Page = require('../models/page');
+const SubmitQueue = require('../models/submitQueue');
 const jwt = require('jsonwebtoken');
-const { PubSub } = require('apollo-server-express');
 const { withFilter } = require('apollo-server-express');
+const pubsub = require('./pubsup');
 
-
-const pubsub = new PubSub();
 
 const resolvers = {
   Query: {
@@ -133,7 +132,8 @@ const resolvers = {
     },
     leaveGame: async (parent, {gameId}, context)=>{
       const game = await Game.findById(gameId).populate('players');
-      if(game.players.indexOf(context.user.id)<0){
+      const playersIds = game.players.map(player=>player._id)
+      if(playersIds.indexOf(context.user.id)>-1 && game.status==="new"){
         game.players = game.players.filter(user=>{
           return user.id!==context.user.id
         });
@@ -143,20 +143,20 @@ const resolvers = {
           game.creator = newCreator
         }
         await game.save();
+        pubsub.publish("PLAYER_UPDATE", { 
+          playerUpdate: {
+            players:game.players,
+            gameId: game.id,
+            creator: game.creator
+        } });
       }
-      pubsub.publish("PLAYER_UPDATE", { 
-        playerUpdate: {
-          players:game.players,
-          gameId: game.id,
-          creator: game.creator
-      } });
       return game
     },
     changeGameStatus: async (parent, {gameId, newStatus}, context)=>{
-      console.log('GAME STATUS CHANGE new status ', newStatus)
+      //console.log('GAME STATUS CHANGE new status ', newStatus)
       const game = await Game.findById(gameId).populate('players').populate('sketchbooks');
       if(game.status!==newStatus && context.user.id===game.creator.toString()){
-        console.log('OK LETS CHANGE')
+        //console.log('OK LETS CHANGE')
         game.status = newStatus;
         if(newStatus==="active"){
           game.players.forEach(
@@ -168,9 +168,17 @@ const resolvers = {
               game.sketchbooks.push(sketchbook)
             }
           )
+          const interval = setInterval(() =>{
+            pubsub.publish("TIME_TO_SUBMIT", {submit: {id: gameId}});
+            console.log("LOOPING!")
+          }, 1000);
+          setTimeout(() => clearInterval(interval), 10000);
+        }
+        else if(newStatus==="over"){
+          SubmitQueue.remove({gameId});
         }
         game.save();
-        console.log('GAME OBJ SENT ', game)
+        //console.log('GAME OBJ SENT ', game)
         pubsub.publish("GAME_UPDATE", { gameUpdate: game});
       }
       return game;
@@ -187,10 +195,8 @@ const resolvers = {
       sketchbook.pages.push(page);
       await sketchbook.save();
 
-      pubsub.publish("SUBMIT_UPDATE", { submitUpdate: {
-        gameId,
-        user
-      }});
+      queue = new SubmitQueue({gameId})
+      queue.save()
 
       return {
         id : page.id
@@ -219,14 +225,15 @@ const resolvers = {
         },
       )
     },
-    submitUpdate: {
+    timeToSubmit: {
       subscribe: withFilter(
-        () => {          
-          return pubsub.asyncIterator(["SUBMIT_UPDATE"])
+        ()=>{
+          console.log('TIME TO SUBMIT LISTENING CLIENT')
+          return pubsub.asyncIterator(["TIME_TO_SUBMIT"])
         },
         (payload, variables) => {
-          console.log('SUBMIT_UPDATE CALLED')
-         return payload.submitUpdate.gameId === variables.gameId;
+          console.log('TIME_TO_SUBMIT should pass ', payload.submit.id === variables.gameId)
+         return payload.submit.id === variables.gameId;
         },
       )
     }
