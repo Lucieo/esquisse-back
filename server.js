@@ -69,12 +69,11 @@ server.installSubscriptionHandlers(httpServer);
 
 gameCleaningJob();
 
-const PORT = process.env.PORT || 4000;
 mongoose
 .connect(MONGO_URI)
 .then(result=>{
-  httpServer.listen(PORT, () => {
-    console.log(`🚀 Server ready at http://localhost:${PORT}${server.graphqlPath}`)
-    console.log(`🚀 Subscriptions ready at ws://localhost:${PORT}${server.subscriptionsPath}`)
-  })
+  httpServer.listen({ port: process.env.PORT || 4000 }).then(({ url }) => {
+    console.log(`🚀 Server ready at ${url}`);
+  });
 })
+
