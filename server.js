@@ -60,6 +60,7 @@ const server = new ApolloServer({
         'request.credentials': 'same-origin',
       },
     },
+    introspection:true
   });
 
 const http = require('http');
