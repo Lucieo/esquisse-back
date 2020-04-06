@@ -69,7 +69,7 @@ server.installSubscriptionHandlers(httpServer);
 
 gameCleaningJob();
 
-const PORT = 4000;
+const PORT = process.env.PORT || 4000;
 mongoose
 .connect(MONGO_URI)
 .then(result=>{
