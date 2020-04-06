@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
+const Game = require('../models/game');
 
 
 const sketchBookSchema = new Schema({
@@ -10,11 +11,19 @@ const sketchBookSchema = new Schema({
     pages:[{
         type: Schema.Types.ObjectId,
         ref: 'Page'
-    }]
+    }],
+    gameId:{
+        type: Schema.Types.ObjectId,
+        ref: 'Game'
+    }
 },
 {
   timestamps: true
 })
 
+sketchBookSchema.post('save', async function(doc) {
+    console.log('PRE SAVE FROM SKETCHBOOK')
+    Game.checkCompletedTurn(doc.gameId)
+})
 
 module.exports = mongoose.model('Sketchbook', sketchBookSchema)

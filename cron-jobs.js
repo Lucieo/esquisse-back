@@ -6,11 +6,12 @@ const Page = require('./models/page');
 
 //Guest Posts Cleaning Cron
 exports.gameCleaningJob = ()=>{
-    cron.schedule("30 05 * * *", async function(){
-        console.log("Cleaning games cron starting")
-        const yesterday = new Date(Date.now() - 1*24*60*60 * 1000)
-        Game.remove( { created_at : {"$lt" : yesterday } });
-        Sketchbook.remove( { created_at : {"$lt" : yesterday } });
-        Page.remove( { created_at : {"$lt" : yesterday } });
+    cron.schedule("*/30 * * * *", async function(){
+        console.log("CLEANING GAMES CRON")
+        const less30Minutes = new Date()
+        less30Minutes.setMinutes( less30Minutes.getMinutes() - 30 );
+        await Game.remove({createdAt:{"$lt":less30Minutes}})
+        await Sketchbook.remove({createdAt:{"$lt":less30Minutes}});
+        await Page.remove({createdAt:{"$lt":less30Minutes}});
     });
 }

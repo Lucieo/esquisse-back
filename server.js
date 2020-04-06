@@ -2,6 +2,8 @@ const { ApolloServer } = require('apollo-server-express');
 const express = require('express');
 const User = require('./models/user');
 const Game = require('./models/game');
+const Sketchbook = require('./models/sketchbook');
+const Page = require('./models/page');
 const typeDefs = require('./schema/types');
 const resolvers = require('./schema/resolvers');
 const mongoose = require('mongoose');
@@ -16,8 +18,9 @@ const app = express();
 app.use(json({ limit: '2mb' }))
 const MONGO_URI = `mongodb+srv://${process.env.MONGO_ADMIN}:${process.env.MONGO_PASSWORD}@cluster0-jjo7q.mongodb.net/${process.env.MONGO_DB}`;
 console.log(MONGO_URI)
+console.log(process.env.front_url)
 const corsOptions = {
-    origin: 'http://localhost:3000',
+    origin: process.env.front_url,
     credentials: true,
   };
 app.use(cors(corsOptions));

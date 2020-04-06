@@ -4,7 +4,6 @@ const User = require('../models/user');
 const Game = require('../models/game');
 const Sketchbook = require('../models/sketchbook');
 const Page = require('../models/page');
-const SubmitQueue = require('../models/submitQueue');
 const jwt = require('jsonwebtoken');
 const { withFilter } = require('apollo-server-express');
 const pubsub = require('./pubsup');
@@ -153,26 +152,24 @@ const resolvers = {
       return game
     },
     changeGameStatus: async (parent, {gameId, newStatus}, context)=>{
-      //console.log('GAME STATUS CHANGE new status ', newStatus)
       const game = await Game.findById(gameId).populate('players').populate('sketchbooks');
       if(game.status!==newStatus && context.user.id===game.creator.toString()){
-        //console.log('OK LETS CHANGE')
         game.status = newStatus;
         if(newStatus==="active"){
           game.players.forEach(
             creator=>{
               const sketchbook = new Sketchbook({
-                creator
+                creator,
+                gameId
               });
               sketchbook.save()
               game.sketchbooks.push(sketchbook)
             }
           )
-          const interval = setInterval(() =>{
-            pubsub.publish("TIME_TO_SUBMIT", {submit: {id: gameId}});
-            console.log("LOOPING!")
-          }, 1000);
-          setTimeout(() => clearInterval(interval), 10000);
+          setTimeout(() =>{
+            pubsub.publish("TIME_TO_SUBMIT", {timeToSubmit: {id: gameId}});
+            
+          }, 60000);
         }
         else if(newStatus==="over"){
           SubmitQueue.remove({gameId});
@@ -185,21 +182,30 @@ const resolvers = {
     },
     submitPage: async(parent, {sketchbookId, content, pageType, gameId}, {user})=>{
       const sketchbook = await Sketchbook.findById(sketchbookId);
-      const page = new Page({
-        content,
-        pageType,
-        creator: user,
-        sketchbook: sketchbookId
-      });
-      await page.save();
-      sketchbook.pages.push(page);
-      await sketchbook.save();
+      console.log("SUBMIT PAGE CALLED")
+      const pageExists = await Page.findOne({creator:user, sketchbook:sketchbookId})
+      if(!pageExists){
+        console.log('NO PAGE FOUND GO AHEAD SAVE NEW ONE')
+        const page = new Page({
+          content,
+          pageType,
+          creator: user,
+          sketchbook: sketchbookId
+        });
+        await page.save();
+        console.log('NEW PAGE HAS BEEN SAVED FOR CONTENT ', content)
+        sketchbook.pages.push(page);
+        await sketchbook.save();
 
-      queue = new SubmitQueue({gameId})
-      queue.save()
-
-      return {
-        id : page.id
+        return {
+          id : page.id
+        }
+      }
+      else{
+        Game.checkCompletedTurn(gameId)
+      }
+      return{
+        id: null
       }
     }
   },
@@ -232,8 +238,8 @@ const resolvers = {
           return pubsub.asyncIterator(["TIME_TO_SUBMIT"])
         },
         (payload, variables) => {
-          console.log('TIME_TO_SUBMIT should pass ', payload.submit.id === variables.gameId)
-         return payload.submit.id === variables.gameId;
+          console.log('TIME_TO_SUBMIT should pass ', payload.timeToSubmit.id === variables.gameId)
+         return payload.timeToSubmit.id === variables.gameId;
         },
       )
     }

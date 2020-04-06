@@ -65,7 +65,7 @@ type Mutation {
 type Subscription {
     playerUpdate(gameId: ID!): PlayerModifyResponse
     gameUpdate(gameId: ID!): Game
-    timeToSubmit(gameId: ID!): submitPageResponse!
+    timeToSubmit(gameId: ID!): submitPageResponse
 }
 `;
 
