@@ -16,7 +16,13 @@ const app = express();
 
 
 app.use(json({ limit: '2mb' }))
-const MONGO_URI = `mongodb+srv://${process.env.MONGO_ADMIN}:${process.env.MONGO_PASSWORD}@cluster0-jjo7q.mongodb.net/${process.env.MONGO_DB}`;
+const { 
+  MONGO_ADMIN, 
+  MONGO_PASSWORD, 
+  MONGO_DB,
+  MONGO_CLUSTER
+} = process.env;
+const MONGO_URI = `mongodb+srv://${MONGO_ADMIN}:${MONGO_PASSWORD}@${MONGO_CLUSTER}.mongodb.net/${MONGO_DB}`;
 console.log(MONGO_URI)
 console.log(process.env.front_url)
 // const corsOptions = {
