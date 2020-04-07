@@ -3,7 +3,7 @@ const Game = require('./models/game');
 const Sketchbook = require('./models/sketchbook');
 const Page = require('./models/page');
 
-
+// TODO utiliser ttl indexes: https://docs.mongodb.com/manual/core/index-ttl/
 //Guest Posts Cleaning Cron
 exports.gameCleaningJob = ()=>{
     cron.schedule("*/30 * * * *", async function(){
