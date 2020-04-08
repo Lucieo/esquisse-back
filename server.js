@@ -24,9 +24,9 @@ const {
 } = process.env;
 const MONGO_URI = `mongodb+srv://${MONGO_ADMIN}:${MONGO_PASSWORD}@${MONGO_CLUSTER}.mongodb.net/${MONGO_DB}`;
 console.log(MONGO_URI)
-console.log(process.env.front_url)
+console.log(process.env.FRONT_URL)
 // const corsOptions = {
-//     origin: process.env.front_url,
+//     origin: process.env.FRONT_URL,
 //     credentials: true,
 //   };
 // app.use(cors(corsOptions));
