@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 const pubsub = require('../schema/pubsup');
+const debug = require('debug')('esquisse:game');
 
 const gameSchema = new Schema({
     players: [{
@@ -32,15 +33,20 @@ gameSchema.statics.checkCompletedTurn = async function (gameId) {
     const game = await this.findById(gameId)
     .populate('sketchbooks')
     .populate('players')
+
+    // debug(game.sketchbooks.forEach(element => {
+    //     debug(element.pages)
+    // }))
     if(game.sketchbooks.every(sketchbook => sketchbook.pages.length>=((+game.turn)+1)
     )){
-      console.log('ALL RESPONSES RECEIVED CALLED FROM GAME STATIC METHOD')
+      debug('ALL RESPONSES RECEIVED CALLED FROM GAME STATIC METHOD')
       game.turn=(+game.turn+1)
       if(+game.turn>=game.players.length){
         game.status="over";
       }
       await game.save()
       pubsub.publish("GAME_UPDATE", { gameUpdate: game});
+
       let timer = 60000;
       if(lastPageType==="drawing"){
         //Launch a new guessing mode = 30 seconds

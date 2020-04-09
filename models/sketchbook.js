@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 const Game = require('../models/game');
-
+const debug = require('debug')('esquisse:sketchbook');
 
 const sketchBookSchema = new Schema({
     creator: {
@@ -22,7 +22,7 @@ const sketchBookSchema = new Schema({
 })
 
 sketchBookSchema.post('save', async function(doc) {
-    console.log('PRE SAVE FROM SKETCHBOOK')
+    debug('PRE SAVE FROM SKETCHBOOK')
     Game.checkCompletedTurn(doc.gameId)
 })
 
