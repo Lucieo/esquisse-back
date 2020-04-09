@@ -11,14 +11,15 @@ var cors = require('cors');
 const jwt = require('jsonwebtoken');
 const {json} = require('express');
 const {gameCleaningJob} = require('./cron-jobs')
+const debug = require('debug')('esquisse:server');
 
 const app = express();
 
 
 app.use(json({ limit: '2mb' }))
 const MONGO_URI = `mongodb+srv://${process.env.MONGO_ADMIN}:${process.env.MONGO_PASSWORD}@cluster0-jjo7q.mongodb.net/${process.env.MONGO_DB}`;
-console.log(MONGO_URI)
-console.log(process.env.front_url)
+debug(MONGO_URI)
+debug(process.env.front_url)
 // const corsOptions = {
 //     origin: process.env.front_url,
 //     credentials: true,
@@ -81,7 +82,7 @@ mongoose
 .connect(MONGO_URI)
 .then(result=>{
   httpServer.listen({ port: process.env.PORT || 4000 }).then(({ url }) => {
-    console.log(`🚀 Server ready at ${url}`);
+    debug(`🚀 Server ready at ${url}`);
   });
 })
 
