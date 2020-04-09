@@ -30,6 +30,7 @@ const gameSchema = new Schema({
   timestamps: true
 })
 
+const cacheKeyResolver = ({ _id, turn }) => `${_id}-${turn}`;
 const memoizedPublishTimeToSubmit = _.memoize(({ _id, turn }, delay = 60000) => {
     return new Promise((resolve) => {
         setTimeout(() => {
@@ -40,11 +41,11 @@ const memoizedPublishTimeToSubmit = _.memoize(({ _id, turn }, delay = 60000) => 
                 }
             });
             debug("LOOPING FROM SUBMITQUEUE!")
-            memoizedPublishTimeToSubmit.cache.clear();
+            memoizedPublishTimeToSubmit.cache.delete(cacheKeyResolver({ _id, turn }));
             resolve();
         }, delay);
     })
-}, ({ _id, turn }) => `${_id}-${turn}`)
+}, cacheKeyResolver)
 gameSchema.statics.publishTimeToSubmit = memoizedPublishTimeToSubmit;
 
 gameSchema.statics.checkCompletedTurn = async function (gameId) {
