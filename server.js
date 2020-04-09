@@ -11,6 +11,7 @@ var cors = require('cors');
 const jwt = require('jsonwebtoken');
 const {json} = require('express');
 const {gameCleaningJob} = require('./cron-jobs')
+const debug = require('debug')('esquisse:server');
 
 const app = express();
 
@@ -83,7 +84,7 @@ mongoose
 .connect(MONGO_URI)
 .then(result=>{
   httpServer.listen({ port: process.env.PORT || 4000 }).then(({ url }) => {
-    console.log(`🚀 Server ready at ${url}`);
+    debug(`🚀 Server ready at ${url}`);
   });
 })
 
