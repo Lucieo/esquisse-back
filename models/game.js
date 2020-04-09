@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 const { pubsub } = require('../schema');
+const _ = require('lodash');
 const debug = require('debug')('esquisse:game');
 
 const gameSchema = new Schema({
@@ -29,16 +30,22 @@ const gameSchema = new Schema({
   timestamps: true
 })
 
-gameSchema.statics.publishTimeToSubmit = (game) => {
-    setTimeout(() => {
-        pubsub.publish("TIME_TO_SUBMIT", {
-            timeToSubmit: {
-                id: game._id.toString()
-            }
-        });
-        debug("LOOPING FROM SUBMITQUEUE!")
-    }, 60000);
-}
+const memoizedPublishTimeToSubmit = _.memoize(({ _id, turn }, delay = 60000) => {
+    return new Promise((resolve) => {
+        setTimeout(() => {
+            pubsub.publish("TIME_TO_SUBMIT", {
+                timeToSubmit: {
+                    id: _id.toString(),
+                    turn: parseInt(turn, 10) - 1
+                }
+            });
+            debug("LOOPING FROM SUBMITQUEUE!")
+            memoizedPublishTimeToSubmit.cache.clear();
+            resolve();
+        }, delay);
+    })
+}, ({ _id, turn }) => `${_id}-${turn}`)
+gameSchema.statics.publishTimeToSubmit = memoizedPublishTimeToSubmit;
 
 gameSchema.statics.checkCompletedTurn = async function (gameId) {
     const game = await this.findById(gameId)
