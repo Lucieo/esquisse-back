@@ -66,7 +66,7 @@ const resolvers = {
         }
 
         const hashedPw = await bcrypt.hash(password, 12);
-        user = new User({            
+        user = new User({
             email,
             name,
             password: hashedPw,
@@ -123,7 +123,7 @@ const resolvers = {
         game.players.push(context.user);
         await game.save();
       }
-      pubsub.publish("PLAYER_UPDATE", { 
+      pubsub.publish("PLAYER_UPDATE", {
         playerUpdate: {
           players:game.players,
           gameId: game.id,
@@ -144,7 +144,7 @@ const resolvers = {
           game.creator = newCreator
         }
         await game.save();
-        pubsub.publish("PLAYER_UPDATE", { 
+        pubsub.publish("PLAYER_UPDATE", {
           playerUpdate: {
             players:game.players,
             gameId: game.id,
@@ -170,7 +170,7 @@ const resolvers = {
           )
           setTimeout(() =>{
             pubsub.publish("TIME_TO_SUBMIT", {timeToSubmit: {id: gameId}});
-            
+
           }, 60000);
         }
         else if(newStatus==="over"){
@@ -224,7 +224,7 @@ const resolvers = {
     },
     gameUpdate: {
       subscribe: withFilter(
-        () => {          
+        () => {
           return pubsub.asyncIterator(["GAME_UPDATE"])
         },
         (payload, variables) => {
