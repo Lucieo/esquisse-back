@@ -8,8 +8,12 @@ jest.mock('../../schema', () => ({
 }))
 
 const mockSave = jest.fn();
+const mockIsOver = jest.fn();
+const mockTurnIsOver = jest.fn();
 const mockGameInstance = {
     save: mockSave,
+    isOver: mockIsOver,
+    turnIsOver: mockTurnIsOver
 }
 const mockGameQuery = {
     populate: () => mockGameQuery,
@@ -84,11 +88,7 @@ describe('Game', () => {
 
         describe('tous les sketchbooks ne sont pas remplis pour le tour', () => {
             it('ne fait rien', async () => {
-                mockGameInstance.turn = 1;
-                mockGameInstance.sketchbooks = [
-                    { pages: [1, 2] },
-                    { pages: [] },
-                ]
+                mockTurnIsOver.mockReturnValue(false)
                 const gameId = 'gameId';
                 await Game.checkCompletedTurn(gameId)
 
@@ -102,12 +102,11 @@ describe('Game', () => {
         })
 
         describe('les sketchbooks sont remplis pour le tour', () => {
+            beforeEach(() => {
+                mockTurnIsOver.mockReturnValue(true)
+            })
+
             it('incrémentation du tour', async () => {
-                mockGameInstance.turn = 0;
-                mockGameInstance.sketchbooks = [
-                    { pages: [1] },
-                    { pages: [1] },
-                ]
                 const gameId = 'gameId';
                 await Game.checkCompletedTurn(gameId)
 
@@ -126,15 +125,7 @@ describe('Game', () => {
             })
 
             it('le jeu est fini quand chaque sketchbook est passé par chaque joueur', async () => {
-                mockGameInstance.turn = 1;
-                mockGameInstance.sketchbooks = [
-                    { pages: [1,2] },
-                    { pages: [1,2] },
-                ]
-                mockGameInstance.players = [
-                    {},
-                    {},
-                ]
+                mockGameInstance.isOver.mockReturnValue(true)
                 const gameId = 'gameId';
                 await Game.checkCompletedTurn(gameId)
 
@@ -142,16 +133,7 @@ describe('Game', () => {
             })
 
             it('le jeu n\'est pas fini tant que chaque sketchbook n\'est pas passé par chaque joueur', async () => {
-                mockGameInstance.turn = 0;
-                mockGameInstance.sketchbooks = [
-                    { pages: [1] },
-                    { pages: [1] },
-                ]
-                mockGameInstance.players = [
-                    {},
-                    {},
-                    {}
-                ]
+                mockGameInstance.isOver.mockReturnValue(false)
                 const gameId = 'gameId';
                 await Game.checkCompletedTurn(gameId)
 

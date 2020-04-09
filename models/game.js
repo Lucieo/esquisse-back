@@ -30,6 +30,18 @@ const gameSchema = new Schema({
   timestamps: true
 })
 
+gameSchema.methods.turnIsOver = () => {
+    const turnCount = (+this.turn)+1;
+    return _.every(
+        sketchbooks,
+        sketchbook => _.size(sketchbook.pages) >= turnCount
+    );
+}
+
+gameSchema.methods.isOver = () => {
+   return this.status === 'over' || +this.turn >= _.size(this.players)
+}
+
 const cacheKeyResolver = ({ _id, turn }) => `${_id}-${turn}`;
 const memoizedPublishTimeToSubmit = _.memoize(({ _id, turn }, delay = 60000) => {
     return new Promise((resolve) => {
@@ -52,14 +64,11 @@ gameSchema.statics.checkCompletedTurn = async function (gameId) {
     const game = await this.findById(gameId)
         .populate('sketchbooks')
         .populate('players')
-    // debug(game.sketchbooks.forEach(element => {
-    //     debug(element.pages)
-    // }))
-    if(game.sketchbooks.every(sketchbook => sketchbook.pages.length>=((+game.turn)+1)
-    )){
+
+    if(game.turnIsOver()) {
       debug('ALL RESPONSES RECEIVED CALLED FROM GAME STATIC METHOD')
       game.turn=(+game.turn+1)
-      if(+game.turn>=game.players.length){
+      if(game.isOver()){
         game.status="over";
       }
       await game.save()
