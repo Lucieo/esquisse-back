@@ -7,7 +7,7 @@ const Page = require('../models/page');
 const jwt = require('jsonwebtoken');
 const { withFilter } = require('apollo-server-express');
 const pubsub = require('./pubsup');
-
+const debug = require('debug')('esquisse:resolvers');
 
 const resolvers = {
   Query: {
@@ -175,17 +175,17 @@ const resolvers = {
           SubmitQueue.remove({gameId});
         }
         game.save();
-        //console.log('GAME OBJ SENT ', game)
+        //debug('GAME OBJ SENT ', game)
         pubsub.publish("GAME_UPDATE", { gameUpdate: game});
       }
       return game;
     },
     submitPage: async(parent, {sketchbookId, content, pageType, gameId}, {user})=>{
       const sketchbook = await Sketchbook.findById(sketchbookId);
-      console.log("SUBMIT PAGE CALLED")
+      debug("SUBMIT PAGE CALLED")
       const pageExists = await Page.findOne({creator:user, sketchbook:sketchbookId})
       if(!pageExists){
-        console.log('NO PAGE FOUND GO AHEAD SAVE NEW ONE')
+        debug('NO PAGE FOUND GO AHEAD SAVE NEW ONE')
         const page = new Page({
           content,
           pageType,
@@ -193,7 +193,7 @@ const resolvers = {
           sketchbook: sketchbookId
         });
         await page.save();
-        console.log('NEW PAGE HAS BEEN SAVED FOR CONTENT ', content)
+        debug('NEW PAGE HAS BEEN SAVED FOR CONTENT ', content)
         sketchbook.pages.push(page);
         await sketchbook.save();
 
@@ -226,7 +226,7 @@ const resolvers = {
           return pubsub.asyncIterator(["GAME_UPDATE"])
         },
         (payload, variables) => {
-          console.log('GAME UPDATE CALLED should pass ', payload.gameUpdate.id === variables.gameId)
+          debug('GAME UPDATE CALLED should pass ', payload.gameUpdate.id === variables.gameId)
          return payload.gameUpdate.id === variables.gameId;
         },
       )
@@ -234,11 +234,11 @@ const resolvers = {
     timeToSubmit: {
       subscribe: withFilter(
         ()=>{
-          console.log('TIME TO SUBMIT LISTENING CLIENT')
+          debug('TIME TO SUBMIT LISTENING CLIENT')
           return pubsub.asyncIterator(["TIME_TO_SUBMIT"])
         },
         (payload, variables) => {
-          console.log('TIME_TO_SUBMIT should pass ', payload.timeToSubmit.id === variables.gameId)
+          debug('TIME_TO_SUBMIT should pass ', payload.timeToSubmit.id === variables.gameId)
          return payload.timeToSubmit.id === variables.gameId;
         },
       )
