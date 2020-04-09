@@ -33,6 +33,7 @@ gameSchema.statics.checkCompletedTurn = async function (gameId) {
     const game = await this.findById(gameId)
     .populate('sketchbooks')
     .populate('players')
+
     // debug(game.sketchbooks.forEach(element => {
     //     debug(element.pages)
     // }))
@@ -45,11 +46,20 @@ gameSchema.statics.checkCompletedTurn = async function (gameId) {
       }
       await game.save()
       pubsub.publish("GAME_UPDATE", { gameUpdate: game});
-      debug('ALL RESPONSES RECEIVED DONE')
+
+      let timer = 60000;
+      if(lastPageType==="drawing"){
+        //Launch a new guessing mode = 30 seconds
+        timer=30000
+      }
+      else if(lastPageType==="guessing"){
+        //Launch a new drawing mode = 1mn30
+        timer=90000
+      }
+      console.log("lastPageType", lastPageType, "timer", timer)
       setTimeout(() =>{
         pubsub.publish("TIME_TO_SUBMIT", {timeToSubmit: {id: game._id.toString()}});
-        debug("LOOPING FROM SUBMITQUEUE!")
-      }, 60000);
+      }, timer);
     }
 }
 

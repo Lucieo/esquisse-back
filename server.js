@@ -83,8 +83,9 @@ gameCleaningJob();
 mongoose
 .connect(MONGO_URI)
 .then(result=>{
-  httpServer.listen({ port: process.env.PORT || 4000 }).then(({ url }) => {
-    debug(`🚀 Server ready at ${url}`);
-  });
+
+  httpServer.listen({ port: process.env.PORT || 4000 }, ()=>{
+    console.log(`🚀 Server ready at ${server.graphqlPath}`);
+  })
 })
 
