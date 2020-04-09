@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
-const pubsub = require('../schema/pubsup');
+const { pubsub } = require('../schema');
 const debug = require('debug')('esquisse:game');
 
 const gameSchema = new Schema({

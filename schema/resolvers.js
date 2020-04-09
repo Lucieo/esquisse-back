@@ -1,12 +1,14 @@
 
 const bcrypt = require('bcrypt');
-const User = require('../models/user');
-const Game = require('../models/game');
-const Sketchbook = require('../models/sketchbook');
-const Page = require('../models/page');
+const {
+  User,
+  Game,
+  Sketchbook,
+  Page
+} = require('../models');
 const jwt = require('jsonwebtoken');
 const { withFilter } = require('apollo-server-express');
-const pubsub = require('./pubsup');
+const pubsub = require('./pubsub');
 const debug = require('debug')('esquisse:resolvers');
 
 const resolvers = {
