@@ -84,9 +84,7 @@ if (require.main === module) {
   mongoose
     .connect(MONGO_URI)
     .then(result => {
-      httpServer.listen({ port: process.env.PORT || 4000 }).then(({ url }) => {
-        debug(`🚀 Server ready at ${url}`);
-      });
+      httpServer.listen({ port: process.env.PORT || 4000 }, ()=>debug(`🚀 Server ready`))
     })
 }
 
