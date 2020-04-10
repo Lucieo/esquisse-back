@@ -1,4 +1,4 @@
-const { Game } = require('../../models');
+const { Game, User, Sketchbook, Page } = require('../../models');
 const { pubsub } = require('../../schema');
 
 jest.mock('../../schema', () => ({
@@ -13,7 +13,7 @@ const mockTurnIsOver = jest.fn();
 const mockGameInstance = {
     save: mockSave,
     isOver: mockIsOver,
-    turnIsOver: mockTurnIsOver
+    currentTurnIsOver: mockTurnIsOver
 }
 const mockGameQuery = {
     populate: () => mockGameQuery,
@@ -140,6 +140,55 @@ describe('Game', () => {
                 expect(mockGameInstance.status).toEqual('new');
             })
         })
+    })
 
+    describe('methods', () => {
+        describe('isOver', () => {
+            it('retourne true quand le jeu est fini', () => {
+                const game = new Game({
+                    turn: 1,
+                    players: [
+                        new User()
+                    ]
+                })
+                expect(game.isOver()).toBe(true)
+            })
+
+            it('retourne false quand le jeu n\'est pas fini', () => {
+                const game = new Game({
+                    turn: 0,
+                    players: [
+                        new User()
+                    ]
+                })
+                expect(game.isOver()).toBe(false)
+            })
+        })
+
+        describe('currentTurnIsOver', () => {
+            it('retourne true quand le tour est fini', () => {
+                const game = new Game({
+                    turn: 0,
+                    sketchbooks: [
+                        new Sketchbook({
+                            pages: [new Page()]
+                        })
+                    ]
+                })
+                expect(game.currentTurnIsOver()).toBe(true)
+            })
+
+            it('retourne false quand le tour n\'est pas fini', () => {
+                const game = new Game({
+                    turn: 0,
+                    sketchbooks: [
+                        new Sketchbook({
+                            pages: []
+                        })
+                    ]
+                })
+                expect(game.currentTurnIsOver()).toBe(false)
+            })
+        })
     })
 })

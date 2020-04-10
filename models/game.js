@@ -30,16 +30,15 @@ const gameSchema = new Schema({
   timestamps: true
 })
 
-gameSchema.methods.turnIsOver = () => {
+gameSchema.methods.currentTurnIsOver = function() {
     const turnCount = (+this.turn)+1;
-    return _.every(
-        sketchbooks,
-        sketchbook => _.size(sketchbook.pages) >= turnCount
+    return this.sketchbooks.every(
+        sketchbook => sketchbook.pages.length >= turnCount
     );
 }
 
-gameSchema.methods.isOver = () => {
-   return this.status === 'over' || +this.turn >= _.size(this.players)
+gameSchema.methods.isOver = function() {
+   return this.status === 'over' || +this.turn >= this.players.length
 }
 
 const cacheKeyResolver = ({ _id, turn }) => `${_id}-${turn}`;
@@ -65,7 +64,7 @@ gameSchema.statics.checkCompletedTurn = async function (gameId) {
         .populate('sketchbooks')
         .populate('players')
 
-    if(game.turnIsOver()) {
+    if(game.currentTurnIsOver()) {
       debug('ALL RESPONSES RECEIVED CALLED FROM GAME STATIC METHOD')
       game.turn=(+game.turn+1)
       if(game.isOver()){
