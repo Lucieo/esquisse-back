@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
-const { pubsub } = require('../schema');
+// const { pubsub } = require('../schema');
+const pubsub = require('../schema/pubsub')
 const _ = require('lodash');
 const debug = require('debug')('esquisse:game');
 
@@ -42,8 +43,11 @@ gameSchema.methods.isOver = function() {
 }
 
 const cacheKeyResolver = ({ _id, turn }) => `${_id}-${turn}`;
-const memoizedPublishTimeToSubmit = _.memoize(({ _id, turn }, delay = 60000) => {
+const memoizedPublishTimeToSubmit = _.memoize(({ _id, turn }) => {
     return new Promise((resolve) => {
+        //Odd means drawing mode - Even means guessing mode
+        const delay = (turn%2==0) ? 30000 : 90000
+        console.log("DELAY", delay) 
         setTimeout(() => {
             pubsub.publish("TIME_TO_SUBMIT", {
                 timeToSubmit: {

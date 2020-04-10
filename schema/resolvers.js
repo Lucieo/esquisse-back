@@ -1,11 +1,16 @@
 
 const bcrypt = require('bcrypt');
-const {
-  User,
-  Game,
-  Sketchbook,
-  Page
-} = require('../models');
+// const {
+//   User,
+//   Game,
+//   Sketchbook,
+//   Page
+// } = require('../models');
+const User = require('../models/user');
+const Game = require('../models/game');
+const Sketchbook = require('../models/sketchbook');
+const Page = require('../models/page');
+
 const jwt = require('jsonwebtoken');
 const { withFilter } = require('apollo-server-express');
 const pubsub = require('./pubsub');
