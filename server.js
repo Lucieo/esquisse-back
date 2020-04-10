@@ -1,27 +1,25 @@
 const { ApolloServer } = require('apollo-server-express');
 const express = require('express');
-const User = require('./models/user');
-const Game = require('./models/game');
-const Sketchbook = require('./models/sketchbook');
-const Page = require('./models/page');
-const typeDefs = require('./schema/types');
-const resolvers = require('./schema/resolvers');
+const {
+  User,
+} = require('./models');
+const { typeDefs, resolvers } = require('./schema');
 const mongoose = require('mongoose');
 var cors = require('cors');
 const jwt = require('jsonwebtoken');
-const {json} = require('express');
-const {gameCleaningJob} = require('./cron-jobs')
+const { json } = require('express');
+const { gameCleaningJob } = require('./cron-jobs')
 const debug = require('debug')('esquisse:server');
 
 const app = express();
 
 
 app.use(json({ limit: '2mb' }))
-const { 
+const {
   MONGO_URI
 } = process.env;
-console.log(MONGO_URI)
-console.log(process.env.FRONT_URL)
+debug(MONGO_URI)
+debug(process.env.FRONT_URL)
 // const corsOptions = {
 //     origin: process.env.FRONT_URL,
 //     credentials: true,
@@ -38,7 +36,7 @@ app.use((req, res, next) => {
 const getUser = async (token) => {
   try {
     if (token) {
-      const id = await jwt.verify(token.split(' ')[1], process.env.SESSION_SECRET).id
+      const id = jwt.verify(token.split(' ')[1], process.env.SESSION_SECRET).id
       const user = await User.findById(id);
       return user
     }
@@ -48,44 +46,47 @@ const getUser = async (token) => {
   }
 }
 
-
-
 const server = new ApolloServer({
-    typeDefs,
-    resolvers,
-    context: async ({ req, connection }) => {
-        if (connection) {
-          return connection.context;
-        } 
-        else{
-          const token = req.headers.authorization || '';
-          const user = await getUser(token)
-          return {
-            user
-          }
-        }
+  typeDefs,
+  resolvers,
+  context: async ({ req, connection }) => {
+    if (connection) {
+      return connection.context;
+    }
+    else {
+      const token = req.headers.authorization || '';
+      const user = await getUser(token)
+      return {
+        user
+      }
+    }
+  },
+  playground: {
+    settings: {
+      'request.credentials': 'same-origin',
     },
-    playground: {
-      settings: {
-        'request.credentials': 'same-origin',
-      },
-    },
-    introspection:true
-  });
+  },
+  introspection: true
+});
 
-const http = require('http');
-server.applyMiddleware({app})
-const httpServer = http.createServer(app);
-server.installSubscriptionHandlers(httpServer);
+module.exports = {
+  getUser
+}
 
-gameCleaningJob();
+if (require.main === module) {
+  const http = require('http');
+  server.applyMiddleware({ app })
+  const httpServer = http.createServer(app);
+  server.installSubscriptionHandlers(httpServer);
 
-mongoose
-.connect(MONGO_URI)
-.then(result=>{
+  gameCleaningJob();
 
-  httpServer.listen({ port: process.env.PORT || 4000 }, ()=>{
-    console.log(`🚀 Server ready at ${server.graphqlPath}`);
-  })
-})
+  mongoose
+    .connect(MONGO_URI)
+    .then(result => {
+      httpServer.listen({ port: process.env.PORT || 4000 }).then(({ url }) => {
+        debug(`🚀 Server ready at ${url}`);
+      });
+    })
+}
 
