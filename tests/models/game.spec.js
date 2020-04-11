@@ -67,11 +67,14 @@ describe('Game', () => {
                 expect(mockFindById).toHaveBeenCalledWith(gameId);
 
                 expect(mockSave).toHaveBeenCalledTimes(1);
-                // expect(pubsub.publish).toHaveBeenCalledTimes(1);
-                // expect(pubsub.publish).toHaveBeenCalledWith(
-                //     'GAME_UPDATE',
-                //     { gameUpdate: mockGameInstance }
-                // );
+            })
+
+            it('retour l\'instance du jeu et un flag pour indiquer qu\'on passe au tour suivant', async () => {
+                mockGameInstance.isOver.mockReturnValue(true)
+                const gameId = 'gameId';
+                const result = await Game.checkCompletedTurn(gameId)
+
+                expect(result).toEqual({ isTurnCompleted: true, game: mockGameInstance });
             })
 
             it('le jeu est fini quand chaque sketchbook est passé par chaque joueur', async () => {

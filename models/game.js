@@ -70,7 +70,7 @@ gameSchema.statics.checkCompletedTurn = async function (gameId) {
     }
     await game.save()
     debug('ALL RESPONSES RECEIVED DONE')
-    return { isTurnCompleted: true, turn: game.turn };
+    return { isTurnCompleted: true, game };
 }
 
 module.exports = mongoose.model('Game', gameSchema)
