@@ -2,6 +2,7 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { withFilter } = require('apollo-server-express');
+const _ = require('lodash');
 const debug = require('debug')('esquisse:resolvers');
 const {
     User,
@@ -12,11 +13,9 @@ const {
 const pubsub = require('./pubsub');
 
 const cacheKeyResolver = ({ gameId, turn }) => `${gameId}-${turn}`;
-const memoizedPublishTimeToSubmit = _.memoize(({ gameId, turn }) => {
+const memoizedPublishTimeToSubmit = _.memoize(({ gameId, turn }, delay = 60000) => {
     return new Promise((resolve) => {
-        //Odd means drawing mode - Even means guessing mode
-        const delay = (turn % 2 == 0) ? 60000 : 90000
-        console.log("DELAY", delay)
+        debug("DELAY", delay)
         setTimeout(() => {
             pubsub.publish("TIME_TO_SUBMIT", {
                 timeToSubmit: {
@@ -25,7 +24,7 @@ const memoizedPublishTimeToSubmit = _.memoize(({ gameId, turn }) => {
                 }
             });
             debug("LOOPING FROM SUBMITQUEUE!")
-            memoizedPublishTimeToSubmit.cache.delete(cacheKeyResolver({ _id, turn }));
+            memoizedPublishTimeToSubmit.cache.delete(cacheKeyResolver({ gameId, turn }));
             resolve();
         }, delay);
     })
@@ -226,7 +225,10 @@ const resolvers = {
             else {
                 const { isTurnCompleted, turn } = Game.checkCompletedTurn(gameId)
                 if (isTurnCompleted) {
-                    memoizedPublishTimeToSubmit({ gameId, turn });
+                    pubsub.publish("GAME_UPDATE", { gameUpdate: game });
+                    //Odd means drawing mode - Even means guessing mode
+                    const delay = (turn % 2 == 0) ? 60000 : 90000;
+                    memoizedPublishTimeToSubmit({ gameId, turn }, delay);
                 }
             }
 
@@ -272,6 +274,9 @@ const resolvers = {
     },
 };
 
-module.exports = resolvers;
+module.exports = {
+    memoizedPublishTimeToSubmit,
+    resolvers
+};
 
 

@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-const _ = require('lodash');
 const debug = require('debug')('esquisse:game');
 
 const Schema = mongoose.Schema;
@@ -61,7 +60,6 @@ gameSchema.statics.checkCompletedTurn = async function (gameId) {
         game.status = "over";
     }
     await game.save()
-    pubsub.publish("GAME_UPDATE", { gameUpdate: game });
     debug('ALL RESPONSES RECEIVED DONE')
     return { isTurnCompleted: true, turn: game.turn };
 }
