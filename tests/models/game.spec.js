@@ -8,8 +8,9 @@ const mockGameInstance = {
     isOver: mockIsOver,
     currentTurnIsOver: mockTurnIsOver
 }
+const mockPopulate = jest.fn()
 const mockGameQuery = {
-    populate: () => mockGameQuery,
+    populate: mockPopulate,
     then: (resolve) => resolve(mockGameInstance),
 }
 const mockFindById = jest.fn();
@@ -19,9 +20,24 @@ describe('Game', () => {
     beforeEach(() => {
         jest.resetAllMocks();
         mockFindById.mockReturnValue(mockGameQuery)
+        mockPopulate.mockReturnValue(mockGameQuery)
         mockGameInstance.sketchbooks = [];
         mockGameInstance.players = [];
         mockGameInstance.status = 'new';
+    })
+
+    describe('findByIdAndPopulate', () => {
+        it('findById + populate sketchbooks and users', async () => {
+            const res = await Game.findByIdAndPopulate('gameId')
+            expect(res).toEqual(mockGameInstance)
+
+            expect(mockFindById).toHaveBeenCalledTimes(1)
+            expect(mockFindById).toHaveBeenCalledWith('gameId')
+
+            expect(mockPopulate).toHaveBeenCalledTimes(2)
+            expect(mockPopulate).toHaveBeenNthCalledWith(1, 'sketchbooks')
+            expect(mockPopulate).toHaveBeenNthCalledWith(2, 'players')
+        })
     })
 
     describe('checkCompletedTurn', () => {
