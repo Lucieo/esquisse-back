@@ -15,10 +15,12 @@ const sketchBookSchema = new Schema({
     gameId:{
         type: Schema.Types.ObjectId,
         ref: 'Game'
+    },
+    createdAt: { 
+        type: Date, 
+        expires: 900,
+        default: Date.now 
     }
-},
-{
-  timestamps: true
 })
 
 sketchBookSchema.post('save', async function(doc) {

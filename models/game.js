@@ -25,10 +25,12 @@ const gameSchema = new Schema({
     turn:{
         type: String,
         default:0
+    },
+    createdAt: { 
+        type: Date, 
+        expires: 900,
+        default: Date.now 
     }
-},
-{
-  timestamps: true
 })
 
 gameSchema.methods.currentTurnIsOver = function() {

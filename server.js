@@ -73,13 +73,14 @@ module.exports = {
   getUser
 }
 
+
 if (require.main === module) {
   const http = require('http');
   server.applyMiddleware({ app })
   const httpServer = http.createServer(app);
   server.installSubscriptionHandlers(httpServer);
 
-  gameCleaningJob();
+  //gameCleaningJob();
 
   mongoose
     .connect(MONGO_URI)

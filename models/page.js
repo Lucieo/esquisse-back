@@ -15,10 +15,12 @@ const pageSchema = new Schema({
     sketchbook:{
         type: Schema.Types.ObjectId,
         ref: 'Sketchbook'
+    },
+    createdAt: { 
+        type: Date, 
+        expires: 900,
+        default: Date.now
     }
-},
-{
-  timestamps: true
 })
 
 
