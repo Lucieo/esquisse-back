@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
-const Game = require('../models/game');
+const Game = require('./game');
 const debug = require('debug')('esquisse:sketchbook');
 
 const sketchBookSchema = new Schema({
