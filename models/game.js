@@ -30,13 +30,14 @@ const gameSchema = new Schema({
     }
 })
 
-//Odd means drawing mode - Even means guessing mode
+//Odd means drawing mode
 gameSchema.virtual('isCurrentlyInDrawingMode').get(function () {
-    return this.turn % 2 == 0;
+    return this.turn % 2 != 0;
 })
 
+// Even means guessing mode
 gameSchema.virtual('isCurrentlyInGuessingMode').get(function () {
-    return this.turn % 2 != 0;
+    return this.turn % 2 == 0;
 })
 
 gameSchema.methods.currentTurnIsOver = function () {
