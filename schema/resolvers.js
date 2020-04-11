@@ -11,6 +11,7 @@ const {
     Page
 } = require('../models');
 const pubsub = require('./pubsub');
+const { DELAY } = require('../config')
 
 const cacheKeyResolver = ({ gameId, turn }) => `${gameId}-${turn}`;
 const memoizedPublishTimeToSubmit = _.memoize(({ gameId, turn }, delay = 60000) => {
@@ -20,7 +21,7 @@ const memoizedPublishTimeToSubmit = _.memoize(({ gameId, turn }, delay = 60000) 
             pubsub.publish("TIME_TO_SUBMIT", {
                 timeToSubmit: {
                     id: gameId.toString(),
-                    turn: parseInt(turn, 10) - 1
+                    turn: parseInt(turn, 10)
                 }
             });
             debug("LOOPING FROM SUBMITQUEUE!")
@@ -202,7 +203,6 @@ const resolvers = {
             return game;
         },
         submitPage: async (parent, { sketchbookId, content, pageType, gameId }, { user }) => {
-            const sketchbook = await Sketchbook.findById(sketchbookId);
             debug("SUBMIT PAGE CALLED")
             const pageExists = await Page.findOne({ creator: user, sketchbook: sketchbookId })
             if (!pageExists) {
@@ -215,6 +215,7 @@ const resolvers = {
                 });
                 await page.save();
                 debug('NEW PAGE HAS BEEN SAVED FOR CONTENT ', content)
+                const sketchbook = await Sketchbook.findById(sketchbookId);
                 sketchbook.pages.push(page);
                 await sketchbook.save();
 
@@ -223,12 +224,13 @@ const resolvers = {
                 }
             }
             else {
-                const { isTurnCompleted, turn } = Game.checkCompletedTurn(gameId)
+                const { isTurnCompleted, game } = await Game.checkCompletedTurn(gameId)
                 if (isTurnCompleted) {
                     pubsub.publish("GAME_UPDATE", { gameUpdate: game });
-                    //Odd means drawing mode - Even means guessing mode
-                    const delay = (turn % 2 == 0) ? 60000 : 90000;
-                    memoizedPublishTimeToSubmit({ gameId, turn }, delay);
+                    const delay = game.isCurrentlyInGuessingMode
+                        ? DELAY.GUESSING_MODE
+                        : DELAY.DRAWING_MODE;
+                    memoizedPublishTimeToSubmit({ gameId, turn: game.turn }, delay);
                 }
             }
 
