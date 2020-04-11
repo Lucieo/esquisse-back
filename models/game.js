@@ -46,7 +46,7 @@ const cacheKeyResolver = ({ _id, turn }) => `${_id}-${turn}`;
 const memoizedPublishTimeToSubmit = _.memoize(({ _id, turn }) => {
     return new Promise((resolve) => {
         //Odd means drawing mode - Even means guessing mode
-        const delay = (turn%2==0) ? 30000 : 90000
+        const delay = (turn%2==0) ? 60000 : 90000
         console.log("DELAY", delay) 
         setTimeout(() => {
             pubsub.publish("TIME_TO_SUBMIT", {
