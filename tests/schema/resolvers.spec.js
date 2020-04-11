@@ -1,15 +1,23 @@
 const {
  resolvers: {
      Query: {
-        currentUser
+        currentUser,
+        getGameInfo
      }
  },
  memoizedPublishTimeToSubmit
 } = require('../../schema/resolvers')
+const { Game } = require('../../models');
 const pubsub = require('../../schema/pubsub');
 
 jest.mock('../../schema/pubsub', () => ({
     publish: jest.fn()
+}))
+
+jest.mock('../../models', () => ({
+    Game: {
+        findByIdAndPopulate: jest.fn()
+    }
 }))
 
 describe('memoizedPublishTimeToSubmit', () => {
@@ -65,6 +73,19 @@ describe('Query', () => {
             await expect(currentUser({}, {}, {})).rejects.toThrow(
                 new Error('Not Authenticated')
             )
+        })
+    })
+
+    describe('getGameInfo', () => {
+        it('returns a Game', async () => {
+            const gameId = 'gameId'
+            const game = { _id: gameId };
+            Game.findByIdAndPopulate.mockResolvedValue(game)
+            const result = await getGameInfo({}, { gameId }, {});
+
+            expect(result).toEqual(game)
+            expect(Game.findByIdAndPopulate).toHaveBeenCalledTimes(1)
+            expect(Game.findByIdAndPopulate).toHaveBeenCalledWith(gameId)
         })
     })
 })
