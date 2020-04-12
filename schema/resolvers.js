@@ -178,9 +178,6 @@ const resolvers = {
 
           }, 60000);
         }
-        else if(newStatus==="over"){
-          SubmitQueue.remove({gameId});
-        }
         game.save();
         //debug('GAME OBJ SENT ', game)
         pubsub.publish("GAME_UPDATE", { gameUpdate: game});
