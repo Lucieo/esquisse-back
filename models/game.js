@@ -21,7 +21,10 @@ const gameSchema = new Schema({
     },
     status: {
         type: String,
-        default: GAME_STATUS.NEW
+        default: GAME_STATUS.NEW,
+        enum: [
+            ...Object.values(GAME_STATUS)
+        ],
     },
     sketchbooks: [{
         type: Schema.Types.ObjectId,

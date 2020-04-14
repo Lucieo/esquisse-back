@@ -52,6 +52,16 @@ type Query {
     getAllSketchbooks(gameId: ID!): [Sketchbook]
     getLastUserGames: [allGamesResponse]
 }
+enum GameStatus {
+    new
+    active
+    over
+}
+enum PageType {
+    init
+    guessing
+    drawing
+}
 type Mutation {
     signup(name: String!, email: String!, password: String!): User!
     login(email: String!, password: String!): LoginResponse!
@@ -59,8 +69,8 @@ type Mutation {
     createGame: CreatedGame
     joinGame(gameId: ID!): Game
     leaveGame(gameId: ID!): Game
-    changeGameStatus(gameId: ID!, newStatus: String!): Game
-    submitPage(sketchbookId: ID!, gameId: ID!, content: String! pageType: String!): submitPageResponse!
+    changeGameStatus(gameId: ID!, newStatus: GameStatus!): Game
+    submitPage(sketchbookId: ID!, gameId: ID!, content: String! pageType: PageType!): submitPageResponse!
 }
 type Subscription {
     playerUpdate(gameId: ID!): PlayerModifyResponse

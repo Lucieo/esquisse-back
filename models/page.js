@@ -8,7 +8,12 @@ const pageSchema = new Schema({
         ref: 'User'
     },
     pageType:{
-        type: String
+        type: String,
+        enum: [
+            'init',
+            'guessing',
+            'drawing'
+        ]
     },
     content:{
         type: String
