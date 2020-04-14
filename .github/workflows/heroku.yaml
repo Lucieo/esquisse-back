@@ -1,0 +1,30 @@
+name: Heroku
+
+on:
+  push:
+    branches:
+      - 'ci/**'
+
+jobs:
+  deploy:
+    env:
+      HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+      HEROKU_EMAIL: ${{ secrets.HEROKU_EMAIL }}
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - run: |+
+        cat >~/.netrc <<EOF
+        machine api.heroku.com
+            login $HEROKU_EMAIL
+            password $HEROKU_API_KEY
+        machine git.heroku.com
+            login $HEROKU_EMAIL
+            password $HEROKU_API_KEY
+        EOF
+    - name: Set heroku git remote
+      run: heroku git:remote --app still-badlands-49750
+    - name: Push to Heroku
+      run: git push heroku HEAD:refs/heads/master
+
