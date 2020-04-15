@@ -69,7 +69,7 @@ describe('Game', () => {
                 expect(mockSave).toHaveBeenCalledTimes(1);
             })
 
-            it('retour l\'instance du jeu et un flag pour indiquer qu\'on passe au tour suivant', async () => {
+            it('retourne l\'instance du jeu et un flag pour indiquer qu\'on passe au tour suivant', async () => {
                 mockGameInstance.isOver.mockReturnValue(true)
                 const gameId = 'gameId';
                 const result = await Game.checkCompletedTurn(gameId)

@@ -69,14 +69,16 @@ const server = new ApolloServer({
   introspection: true
 });
 
+server.applyMiddleware({ app })
+
 module.exports = {
-  getUser
+  getUser,
+  app
 }
 
 
 if (require.main === module) {
   const http = require('http');
-  server.applyMiddleware({ app })
   const httpServer = http.createServer(app);
   server.installSubscriptionHandlers(httpServer);
 
