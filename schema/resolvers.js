@@ -39,7 +39,7 @@ const resolvers = {
             }
             return user
         },
-        getGameInfo: (parent, { gameId }, { user }) => {
+        getGameInfo: (parent, { gameId }, context) => {
             return Game.findByIdAndPopulate(gameId);
         },
         getSketchbookInfo: async (parent, { sketchbookId }, context) => {
@@ -79,6 +79,7 @@ const resolvers = {
     },
     Mutation: {
         signup: async (parent, { name, email, password }, context, info) => {
+            debug('signup', { name, email, password })
             const existingUser = await User.find({ email });
             if (existingUser.length > 0) {
                 throw new Error('User with email already exists');
@@ -92,16 +93,16 @@ const resolvers = {
             });
             await user.save();
             return user;
-
         },
         login: async (parent, { email, password }, context) => {
             const user = await User.findOne({ email });
+            const throwInvalidLogin = () => { throw new Error('Invalid Login'); }
             if (!user) {
-                throw new Error('Invalid Login')
+                throwInvalidLogin();
             }
             const passwordMatch = await bcrypt.compare(password, user.password)
             if (!passwordMatch) {
-                throw new Error('Invalid Login')
+                throwInvalidLogin();
             }
             const token = jwt.sign(
                 {
@@ -137,7 +138,7 @@ const resolvers = {
         },
         joinGame: async (parent, { gameId }, context) => {
             const game = await Game.findById(gameId).populate('players');
-            if (game.players.indexOf(context.user.id) < 0) {
+            if (!game.players.includes(context.user.id)) {
                 game.players.push(context.user);
                 await game.save();
             }
