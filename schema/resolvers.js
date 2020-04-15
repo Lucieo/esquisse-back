@@ -153,6 +153,7 @@ const resolvers = {
             return game
         },
         leaveGame: async (parent, { gameId }, context) => {
+            debug('LEAVE GAME')
             const game = await Game.findById(gameId).populate('players');
             const playersIds = game.players.map(player => player._id)
             if (playersIds.indexOf(context.user.id) > -1 && game.status === GAME_STATUS.NEW) {
@@ -191,8 +192,11 @@ const resolvers = {
                         }
                     )
                     setTimeout(() => {
-                        pubsub.publish("TIME_TO_SUBMIT", { timeToSubmit: { id: gameId } });
-
+                        pubsub.publish("TIME_TO_SUBMIT", {
+                            timeToSubmit: {
+                                id: gameId
+                            }
+                        });
                     }, 60000);
                 }
                 else if (newStatus === GAME_STATUS.OVER) {

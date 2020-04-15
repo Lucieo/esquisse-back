@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const debug = require('debug')('esquisse:game');
+const { DEFAULT_EXPIRATION } = require('../config')
 
 const GAME_STATUS = {
     OVER: "over",
@@ -32,7 +33,7 @@ const gameSchema = new Schema({
     },
     createdAt: {
         type: Date,
-        expires: 900,
+        expires: DEFAULT_EXPIRATION,
         default: Date.now
     }
 })
@@ -66,11 +67,13 @@ gameSchema.statics.findByIdAndPopulate = function (gameId) {
 
 gameSchema.statics.checkCompletedTurn = async function (gameId) {
     const game = await this.findByIdAndPopulate(gameId);
+    debug(`checkCompletedTurn game=${game}`)
 
     if (!game.currentTurnIsOver()) {
+        debug(`checkCompletedTurn currentTurnIsOver=false`)
         return {
             isTurnCompleted: false,
-            turn: game.turn
+            game
         };
     }
 
