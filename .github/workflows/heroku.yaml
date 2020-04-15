@@ -27,5 +27,5 @@ jobs:
     - name: Set heroku git remote
       run: heroku git:remote --app $HEROKU_APP
     - name: Push to Heroku
-      run: git push heroku HEAD:refs/heads/master
+      run: git push -f heroku HEAD:refs/heads/master
 
