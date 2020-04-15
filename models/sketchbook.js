@@ -24,9 +24,4 @@ const sketchBookSchema = new Schema({
     }
 })
 
-sketchBookSchema.post('save', async function(doc) {
-    debug('PRE SAVE FROM SKETCHBOOK')
-    Game.checkCompletedTurn(doc.gameId)
-})
-
 module.exports = mongoose.model('Sketchbook', sketchBookSchema)

@@ -32,6 +32,18 @@ const memoizedPublishTimeToSubmit = _.memoize(({ gameId, turn }, delay = 60000) 
     })
 }, cacheKeyResolver)
 
+// Est ce qu'on devrait attendre la fin de l'exécution de cette fonction ?
+const checkCompletedTurn = async (gameId) => {
+    const { isTurnCompleted, game } = await Game.checkCompletedTurn(gameId)
+    if (isTurnCompleted) {
+        pubsub.publish("GAME_UPDATE", { gameUpdate: game });
+        const delay = game.isCurrentlyInGuessingMode
+            ? DELAY.GUESSING_MODE
+            : DELAY.DRAWING_MODE;
+        memoizedPublishTimeToSubmit({ gameId, turn: game.turn }, delay);
+    }
+}
+
 const resolvers = {
     Query: {
         currentUser: async (parent, args, { user }) => {
@@ -191,13 +203,7 @@ const resolvers = {
                             game.sketchbooks.push(sketchbook)
                         }
                     )
-                    setTimeout(() => {
-                        pubsub.publish("TIME_TO_SUBMIT", {
-                            timeToSubmit: {
-                                id: gameId
-                            }
-                        });
-                    }, 60000);
+                    memoizedPublishTimeToSubmit({ gameId, turn: null });
                 }
                 else if (newStatus === GAME_STATUS.OVER) {
                     SubmitQueue.remove({ gameId });
@@ -210,10 +216,11 @@ const resolvers = {
         },
         submitPage: async (parent, { sketchbookId, content, pageType, gameId }, { user }) => {
             debug("SUBMIT PAGE CALLED")
-            const pageExists = await Page.findOne({ creator: user, sketchbook: sketchbookId })
-            if (!pageExists) {
+            let page = await Page.findOne({ creator: user, sketchbook: sketchbookId })
+
+            if (!page) {
                 debug('NO PAGE FOUND GO AHEAD SAVE NEW ONE')
-                const page = new Page({
+                page = new Page({
                     content,
                     pageType,
                     creator: user,
@@ -224,24 +231,12 @@ const resolvers = {
                 const sketchbook = await Sketchbook.findById(sketchbookId);
                 sketchbook.pages.push(page);
                 await sketchbook.save();
+            }
 
-                return {
-                    id: page.id
-                }
-            }
-            else {
-                const { isTurnCompleted, game } = await Game.checkCompletedTurn(gameId)
-                if (isTurnCompleted) {
-                    pubsub.publish("GAME_UPDATE", { gameUpdate: game });
-                    const delay = game.isCurrentlyInGuessingMode
-                        ? DELAY.GUESSING_MODE
-                        : DELAY.DRAWING_MODE;
-                    memoizedPublishTimeToSubmit({ gameId, turn: game.turn }, delay);
-                }
-            }
+            await checkCompletedTurn(gameId);
 
             return {
-                id: null
+                id: page.id
             }
         }
     },

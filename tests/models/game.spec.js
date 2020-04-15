@@ -1,4 +1,4 @@
-const { Game, User, Sketchbook, Page } = require('../../models');
+const { Game, User, Sketchbook, Page, GAME_STATUS } = require('../../models');
 
 const mockSave = jest.fn();
 const mockIsOver = jest.fn();
@@ -23,7 +23,7 @@ describe('Game', () => {
         mockPopulate.mockReturnValue(mockGameQuery)
         mockGameInstance.sketchbooks = [];
         mockGameInstance.players = [];
-        mockGameInstance.status = 'new';
+        mockGameInstance.status = GAME_STATUS.NEW;
     })
 
     describe('findByIdAndPopulate', () => {
@@ -82,7 +82,7 @@ describe('Game', () => {
                 const gameId = 'gameId';
                 await Game.checkCompletedTurn(gameId)
 
-                expect(mockGameInstance.status).toEqual('over');
+                expect(mockGameInstance.status).toEqual(GAME_STATUS.OVER);
             })
 
             it('le jeu n\'est pas fini tant que chaque sketchbook n\'est pas passé par chaque joueur', async () => {
@@ -90,7 +90,7 @@ describe('Game', () => {
                 const gameId = 'gameId';
                 await Game.checkCompletedTurn(gameId)
 
-                expect(mockGameInstance.status).toEqual('new');
+                expect(mockGameInstance.status).toEqual(GAME_STATUS.NEW);
             })
         })
     })

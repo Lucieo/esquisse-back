@@ -56,7 +56,7 @@ gameSchema.methods.currentTurnIsOver = function () {
 }
 
 gameSchema.methods.isOver = function () {
-    return this.status === 'over' || +this.turn >= this.players.length
+    return this.status === GAME_STATUS.OVER || +this.turn >= this.players.length
 }
 
 gameSchema.statics.findByIdAndPopulate = function (gameId) {
@@ -67,7 +67,7 @@ gameSchema.statics.findByIdAndPopulate = function (gameId) {
 
 gameSchema.statics.checkCompletedTurn = async function (gameId) {
     const game = await this.findByIdAndPopulate(gameId);
-    debug(`checkCompletedTurn game=${game}`)
+    debug(`checkCompletedTurn`)
 
     if (!game.currentTurnIsOver()) {
         debug(`checkCompletedTurn currentTurnIsOver=false`)

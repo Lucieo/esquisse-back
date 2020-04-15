@@ -124,6 +124,7 @@ describe('Mutations', () => {
 
         it('crée une page si elle n\'existe pas', async () => {
             Page.findOne.mockResolvedValue(null);
+            Game.checkCompletedTurn.mockResolvedValue({})
             const sketchbook = {
                 save: mockSketchbookSave,
                 pages: []
@@ -144,18 +145,20 @@ describe('Mutations', () => {
         })
 
         it('si la page existe, lance la vérification de fin de tour', async () => {
-            Page.findOne.mockResolvedValue({});
+            Page.findOne.mockResolvedValue({
+                id: 1
+            });
             Game.checkCompletedTurn.mockResolvedValue({})
 
             const result = await submitPage({}, { sketchbookId, content, pageType, gameId}, { user })
-            expect(result).toEqual({ id: null })
+            expect(result).toEqual({ id: 1 })
 
             expect(Game.checkCompletedTurn).toHaveBeenCalledTimes(1)
             expect(Game.checkCompletedTurn).toHaveBeenCalledWith(gameId)
         })
 
         it('si le tour est fini, planifie un nouveau TIME_TO_SUBMIT', async () => {
-            Page.findOne.mockResolvedValue({});
+            Page.findOne.mockResolvedValue({ id: 1 });
             Game.checkCompletedTurn.mockResolvedValue({
                 isTurnCompleted: true,
                 game: {
@@ -165,20 +168,20 @@ describe('Mutations', () => {
             })
 
             const result = await submitPage({}, { sketchbookId, content, pageType, gameId}, { user })
-            expect(result).toEqual({ id: null })
+            expect(result).toEqual({ id: 1 })
 
             expect(setTimeout).toHaveBeenCalledWith(expect.any(Function), DELAY.DRAWING_MODE)
         })
 
         it('si le tour est fini, lance un évènement GAME_UPDATE', async () => {
-            Page.findOne.mockResolvedValue({});
+            Page.findOne.mockResolvedValue({id: 1});
             Game.checkCompletedTurn.mockResolvedValue({
                 isTurnCompleted: true,
                 game
             })
 
             const result = await submitPage({}, { sketchbookId, content, pageType, gameId}, { user })
-            expect(result).toEqual({ id: null })
+            expect(result).toEqual({ id: 1 })
 
             expect(pubsub.publish).toHaveBeenCalledTimes(1)
             expect(pubsub.publish).toHaveBeenNthCalledWith(1, 'GAME_UPDATE', { gameUpdate: game })
