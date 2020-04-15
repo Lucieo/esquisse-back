@@ -10,6 +10,7 @@ jobs:
     env:
       HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
       HEROKU_EMAIL: ${{ secrets.HEROKU_EMAIL }}
+      HEROKU_APP: ${{ secrets.HEROKU_APP }}
     runs-on: ubuntu-latest
 
     steps:
@@ -24,7 +25,7 @@ jobs:
             password $HEROKU_API_KEY
         EOF
     - name: Set heroku git remote
-      run: heroku git:remote --app still-badlands-49750
+      run: heroku git:remote --app $HEROKU_APP
     - name: Push to Heroku
       run: git push heroku HEAD:refs/heads/master
 
