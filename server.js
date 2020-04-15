@@ -19,7 +19,7 @@ const {
   MONGO_URI
 } = process.env;
 debug(MONGO_URI)
-debug(process.env.FRONT_URL)
+debug(`FRONT_URL=${process.env.FRONT_URL}`)
 // const corsOptions = {
 //     origin: process.env.FRONT_URL,
 //     credentials: true,

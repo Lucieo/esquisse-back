@@ -1,6 +1,13 @@
 const mongoose = require('mongoose');
 const debug = require('debug')('esquisse:game');
 
+const GAME_STATUS = {
+    OVER: "over",
+    ACTIVE: "active",
+    NEW: "new",
+    ABANDONNED: "abandonned"
+}
+
 const Schema = mongoose.Schema;
 const gameSchema = new Schema({
     players: [{
@@ -13,7 +20,7 @@ const gameSchema = new Schema({
     },
     status: {
         type: String,
-        default: "new"
+        default: GAME_STATUS.NEW
     },
     sketchbooks: [{
         type: Schema.Types.ObjectId,
@@ -61,17 +68,23 @@ gameSchema.statics.checkCompletedTurn = async function (gameId) {
     const game = await this.findByIdAndPopulate(gameId);
 
     if (!game.currentTurnIsOver()) {
-        return { isTurnCompleted: false, turn: game.turn };
+        return {
+            isTurnCompleted: false,
+            turn: game.turn
+        };
     }
 
     debug('ALL RESPONSES RECEIVED CALLED FROM GAME STATIC METHOD')
     game.turn = (+game.turn + 1)
     if (game.isOver()) {
-        game.status = "over";
+        game.status = GAME_STATUS.OVER;
     }
     await game.save()
     debug('ALL RESPONSES RECEIVED DONE')
     return { isTurnCompleted: true, game };
 }
 
-module.exports = mongoose.model('Game', gameSchema)
+module.exports = {
+    Game: mongoose.model('Game', gameSchema),
+    GAME_STATUS,
+}

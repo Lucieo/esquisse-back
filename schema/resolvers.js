@@ -8,7 +8,8 @@ const {
     User,
     Game,
     Sketchbook,
-    Page
+    Page,
+    GAME_STATUS
 } = require('../models');
 const pubsub = require('./pubsub');
 const { DELAY } = require('../config')
@@ -62,7 +63,7 @@ const resolvers = {
         },
         getLastUserGames: async (parent, { }, context) => {
             const games = await Game
-                .find({ players: { $all: [context.user.id] }, status: "over" }, { status: 1 })
+                .find({ players: { $all: [context.user.id] }, status: GAME_STATUS.OVER }, { status: 1 })
                 .sort({ _id: -1 })
                 .populate({
                     path: 'sketchbooks',
@@ -154,11 +155,11 @@ const resolvers = {
         leaveGame: async (parent, { gameId }, context) => {
             const game = await Game.findById(gameId).populate('players');
             const playersIds = game.players.map(player => player._id)
-            if (playersIds.indexOf(context.user.id) > -1 && game.status === "new") {
+            if (playersIds.indexOf(context.user.id) > -1 && game.status === GAME_STATUS.NEW) {
                 game.players = game.players.filter(user => {
                     return user.id !== context.user.id
                 });
-                if (game.players.length === 0) game.status = "abandonned"
+                if (game.players.length === 0) game.status = GAME_STATUS.ABANDONNED
                 if ((game.creator.toString() === context.user.id.toString()) && game.players.length > 0) {
                     const newCreator = game.players[0].id
                     game.creator = newCreator
@@ -178,7 +179,7 @@ const resolvers = {
             const game = await Game.findByIdAndPopulate(gameId);
             if (game.status !== newStatus && context.user.id === game.creator.toString()) {
                 game.status = newStatus;
-                if (newStatus === "active") {
+                if (newStatus === GAME_STATUS.ACTIVE) {
                     game.players.forEach(
                         creator => {
                             const sketchbook = new Sketchbook({
@@ -194,7 +195,7 @@ const resolvers = {
 
                     }, 60000);
                 }
-                else if (newStatus === "over") {
+                else if (newStatus === GAME_STATUS.OVER) {
                     SubmitQueue.remove({ gameId });
                 }
                 game.save();
