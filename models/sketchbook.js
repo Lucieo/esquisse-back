@@ -1,8 +1,6 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
-const { Game } = require('./game');
 const { DEFAULT_MODEL_EXPIRATION } = require('../config')
-const debug = require('debug')('esquisse:sketchbook');
 
 const sketchBookSchema = new Schema({
     creator: {

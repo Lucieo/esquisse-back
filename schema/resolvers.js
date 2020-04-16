@@ -146,7 +146,8 @@ const resolvers = {
             });
             game.save();
             return {
-                id: game.id
+                id: game.id,
+                turn: game.turn
             };
         },
         joinGame: async (parent, { gameId }, context) => {
@@ -190,6 +191,9 @@ const resolvers = {
         },
         changeGameStatus: async (parent, { gameId, newStatus }, { user }) => {
             const game = await Game.findByIdAndPopulate(gameId);
+            if (!game) {
+                throw new Error('Entity Not Found');
+            }
             if (game.status !== newStatus && user.isCreator(game)) {
                 game.status = newStatus;
                 if (newStatus === GAME_STATUS.ACTIVE) {

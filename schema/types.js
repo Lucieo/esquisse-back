@@ -1,4 +1,8 @@
 const {gql} = require('apollo-server-express');
+const {
+    PAGE_TYPE,
+    GAME_STATUS
+} = require('../models');
 
 const typeDefs = gql`
 type User {
@@ -30,7 +34,7 @@ type Game{
     sketchbooks: [Sketchbook]
     turn: Int
 }
-type CreatedGame{
+type CreatedGame {
     id:ID
 }
 type PlayerModifyResponse{
@@ -53,14 +57,15 @@ type Query {
     getLastUserGames: [allGamesResponse]
 }
 enum GameStatus {
-    new
-    active
-    over
+    ${GAME_STATUS.NEW}
+    ${GAME_STATUS.ACTIVE}
+    ${GAME_STATUS.OVER}
+    ${GAME_STATUS.ABANDONNED}
 }
 enum PageType {
-    init
-    guessing
-    drawing
+    ${PAGE_TYPE.INIT}
+    ${PAGE_TYPE.DRAWING}
+    ${PAGE_TYPE.GUESSING}
 }
 type Mutation {
     signup(name: String!, email: String!, password: String!): User!
