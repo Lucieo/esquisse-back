@@ -1,9 +1,6 @@
 const MongoClient = require('mongodb').MongoClient;
 const mongoose = require('mongoose');
-const options = {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-}
+const { MONGOOSE_OPTIONS } = require('../config')
 const {
     MONGO_URI
 } = process.env;
@@ -13,8 +10,8 @@ module.exports = {
         await db.dropDatabase();
     },
     setupConnection: async () => {
-        const mongoConnection = await MongoClient.connect(MONGO_URI, options);
-        const mongooseConnection = await mongoose.connect(MONGO_URI, options);
+        const mongoConnection = await MongoClient.connect(MONGO_URI, MONGOOSE_OPTIONS);
+        const mongooseConnection = await mongoose.connect(MONGO_URI, MONGOOSE_OPTIONS);
         return {
             connection: {
                 async close() {

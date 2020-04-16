@@ -6,6 +6,7 @@ const mongoose = require('mongoose');
 var cors = require('cors');
 const { json } = require('express');
 const debug = require('debug')('esquisse:server');
+const { MONGOOSE_OPTIONS } = require('./config');
 
 const app = express();
 
@@ -66,7 +67,7 @@ if (require.main === module) {
   server.installSubscriptionHandlers(httpServer);
 
   mongoose
-    .connect(MONGO_URI)
+    .connect(MONGO_URI, MONGOOSE_OPTIONS)
     .then(result => {
       httpServer.listen({ port: process.env.PORT || 4000 }, ()=>debug(`🚀 Server ready`))
     })
