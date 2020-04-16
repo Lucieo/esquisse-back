@@ -188,9 +188,9 @@ const resolvers = {
             }
             return game
         },
-        changeGameStatus: async (parent, { gameId, newStatus }, context) => {
+        changeGameStatus: async (parent, { gameId, newStatus }, { user }) => {
             const game = await Game.findByIdAndPopulate(gameId);
-            if (game.status !== newStatus && context.user.id === game.creator.toString()) {
+            if (game.status !== newStatus && user.isCreator(game)) {
                 game.status = newStatus;
                 if (newStatus === GAME_STATUS.ACTIVE) {
                     game.players.forEach(
@@ -203,7 +203,14 @@ const resolvers = {
                             game.sketchbooks.push(sketchbook)
                         }
                     )
-                    memoizedPublishTimeToSubmit({ gameId, turn: null });
+                    setTimeout(() => {
+                        pubsub.publish("TIME_TO_SUBMIT", {
+                            timeToSubmit: {
+                                id: gameId.toString(),
+                                turn: 0
+                            }
+                        });
+                    }, DELAY.DRAWING_MODE)
                 }
                 else if (newStatus === GAME_STATUS.OVER) {
                     SubmitQueue.remove({ gameId });

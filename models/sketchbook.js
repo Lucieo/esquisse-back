@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 const { Game } = require('./game');
-const { DEFAULT_EXPIRATION } = require('../config')
+const { DEFAULT_MODEL_EXPIRATION } = require('../config')
 const debug = require('debug')('esquisse:sketchbook');
 
 const sketchBookSchema = new Schema({
@@ -19,7 +19,7 @@ const sketchBookSchema = new Schema({
     },
     createdAt: {
         type: Date,
-        expires: DEFAULT_EXPIRATION,
+        expires: DEFAULT_MODEL_EXPIRATION,
         default: Date.now
     }
 })

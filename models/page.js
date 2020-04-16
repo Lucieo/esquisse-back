@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const { DEFAULT_EXPIRATION } = require('../config')
+const { DEFAULT_MODEL_EXPIRATION } = require('../config')
 const Schema = mongoose.Schema;
 
 const pageSchema = new Schema({
@@ -19,7 +19,7 @@ const pageSchema = new Schema({
     },
     createdAt: {
         type: Date,
-        expires: DEFAULT_EXPIRATION,
+        expires: DEFAULT_MODEL_EXPIRATION,
         default: Date.now
     }
 })

@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const debug = require('debug')('esquisse:game');
-const { DEFAULT_EXPIRATION } = require('../config')
+const { DEFAULT_MODEL_EXPIRATION } = require('../config')
 
 const GAME_STATUS = {
     OVER: "over",
@@ -33,7 +33,7 @@ const gameSchema = new Schema({
     },
     createdAt: {
         type: Date,
-        expires: DEFAULT_EXPIRATION,
+        expires: DEFAULT_MODEL_EXPIRATION,
         default: Date.now
     }
 })
@@ -53,6 +53,10 @@ gameSchema.methods.currentTurnIsOver = function () {
     return this.sketchbooks.every(
         sketchbook => sketchbook.pages.length >= turnCount
     );
+}
+
+gameSchema.methods.hasStatus = function (status) {
+    return status === this.status;
 }
 
 gameSchema.methods.isOver = function () {
