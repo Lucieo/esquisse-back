@@ -20,6 +20,7 @@ jobs:
     strategy:
       matrix:
         node-version: [12.x]
+        mongodb-version: [4.2]
 
     steps:
       - uses: actions/checkout@v2
@@ -27,6 +28,10 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: ${{ matrix.node-version }}
+      - name: Start MongoDB v${{ matrix.mongodb-version }}
+        uses: supercharge/mongodb-github-action@1.2.0
+        with:
+          mongodb-version: ${{ matrix.mongodb-version }}
       - run: npm ci
       - run: npm run test:unit
         env:
@@ -34,3 +39,4 @@ jobs:
       - run: npm run test:e2e
         env:
           CI: true
+          MONGO_URL: mongodb://localhost:27017/test

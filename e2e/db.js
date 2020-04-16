@@ -5,8 +5,7 @@ const options = {
     useUnifiedTopology: true
 }
 const {
-    // @see https://github.com/shelfio/jest-mongodb#3-configure-mongodb-client
-    MONGO_URL
+    MONGO_URI
 } = process.env;
 
 module.exports = {
@@ -14,8 +13,8 @@ module.exports = {
         await db.dropDatabase();
     },
     setupConnection: async () => {
-        const mongoConnection = await MongoClient.connect(MONGO_URL, options);
-        const mongooseConnection = await mongoose.connect(MONGO_URL, options);
+        const mongoConnection = await MongoClient.connect(MONGO_URI, options);
+        const mongooseConnection = await mongoose.connect(MONGO_URI, options);
         return {
             connection: {
                 async close() {
