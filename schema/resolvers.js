@@ -16,8 +16,8 @@ const { DELAY } = require('../config')
 
 const cacheKeyResolver = ({ gameId, turn }) => `${gameId}-${turn}`;
 const memoizedPublishTimeToSubmit = _.memoize(({ gameId, turn }, delay = 60000) => {
+    debug(`memoizedPublishTimeToSubmit with delay=${delay}`)
     return new Promise((resolve) => {
-        debug("DELAY", delay)
         setTimeout(() => {
             pubsub.publish("TIME_TO_SUBMIT", {
                 timeToSubmit: {
@@ -31,18 +31,6 @@ const memoizedPublishTimeToSubmit = _.memoize(({ gameId, turn }, delay = 60000) 
         }, delay);
     })
 }, cacheKeyResolver)
-
-// Est ce qu'on devrait attendre la fin de l'exécution de cette fonction ?
-const checkCompletedTurn = async (gameId) => {
-    const { isTurnCompleted, game } = await Game.checkCompletedTurn(gameId)
-    if (isTurnCompleted) {
-        pubsub.publish("GAME_UPDATE", { gameUpdate: game });
-        const delay = game.isCurrentlyInGuessingMode
-            ? DELAY.GUESSING_MODE
-            : DELAY.DRAWING_MODE;
-        memoizedPublishTimeToSubmit({ gameId, turn: game.turn }, delay);
-    }
-}
 
 const resolvers = {
     Query: {
@@ -243,7 +231,14 @@ const resolvers = {
                 await sketchbook.save();
             }
 
-            await checkCompletedTurn(gameId);
+            const { isTurnCompleted, game } = await Game.checkCompletedTurn(gameId)
+            if (isTurnCompleted) {
+                pubsub.publish("GAME_UPDATE", { gameUpdate: game });
+                const delay = game.isCurrentlyInGuessingMode
+                    ? DELAY.GUESSING_MODE
+                    : DELAY.DRAWING_MODE;
+                memoizedPublishTimeToSubmit({ gameId, turn: game.turn }, delay);
+            }
 
             return {
                 id: page.id

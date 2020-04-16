@@ -83,14 +83,12 @@ gameSchema.statics.checkCompletedTurn = async function (gameId) {
             game
         };
     }
-
-    debug('ALL RESPONSES RECEIVED CALLED FROM GAME STATIC METHOD')
     game.turn = (+game.turn + 1)
     if (game.isOver()) {
         game.status = GAME_STATUS.OVER;
     }
     await game.save()
-    debug('ALL RESPONSES RECEIVED DONE')
+    debug('checkCompletedTurn done')
     return { isTurnCompleted: true, game };
 }
 
