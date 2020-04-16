@@ -22,7 +22,7 @@ const memoizedPublishTimeToSubmit = _.memoize(({ gameId, turn }, delay = 60000) 
             pubsub.publish("TIME_TO_SUBMIT", {
                 timeToSubmit: {
                     id: gameId.toString(),
-                    turn: parseInt(turn, 10)
+                    turn,
                 }
             });
             debug("LOOPING FROM SUBMITQUEUE!")
@@ -206,8 +206,7 @@ const resolvers = {
                     setTimeout(() => {
                         pubsub.publish("TIME_TO_SUBMIT", {
                             timeToSubmit: {
-                                id: gameId.toString(),
-                                turn: 0
+                                id: gameId.toString()
                             }
                         });
                     }, DELAY.DRAWING_MODE)

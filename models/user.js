@@ -30,7 +30,7 @@ const userSchema = new Schema({
 })
 
 userSchema.methods.isCreator = function (game) {
-    return this.id = game.creator.toString();
+    return this.id === game.creator.toString();
 }
 
 
