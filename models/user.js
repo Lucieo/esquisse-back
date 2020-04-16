@@ -29,5 +29,9 @@ const userSchema = new Schema({
     }
 })
 
+userSchema.methods.isCreator = function (game) {
+    return this.id === game.creator.toString();
+}
+
 
 module.exports = mongoose.model('User', userSchema)

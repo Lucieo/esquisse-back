@@ -8,7 +8,6 @@ const mongoose = require('mongoose');
 var cors = require('cors');
 const jwt = require('jsonwebtoken');
 const { json } = require('express');
-const { gameCleaningJob } = require('./cron-jobs')
 const debug = require('debug')('esquisse:server');
 
 const app = express();
@@ -16,12 +15,13 @@ const app = express();
 
 app.use(json({ limit: '2mb' }))
 const {
-  MONGO_URI
+  MONGO_URI,
+  FRONT_URL
 } = process.env;
-debug(MONGO_URI)
-debug(process.env.FRONT_URL)
+debug(`MONGO_URI=${MONGO_URI}`)
+debug(`FRONT_URL=${FRONT_URL}`)
 // const corsOptions = {
-//     origin: process.env.FRONT_URL,
+//     origin: FRONT_URL,
 //     credentials: true,
 //   };
 // app.use(cors(corsOptions));
@@ -69,18 +69,18 @@ const server = new ApolloServer({
   introspection: true
 });
 
+server.applyMiddleware({ app })
+
 module.exports = {
-  getUser
+  getUser,
+  app
 }
 
 
 if (require.main === module) {
   const http = require('http');
-  server.applyMiddleware({ app })
   const httpServer = http.createServer(app);
   server.installSubscriptionHandlers(httpServer);
-
-  //gameCleaningJob();
 
   mongoose
     .connect(MONGO_URI)

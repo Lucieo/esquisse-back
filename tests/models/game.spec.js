@@ -1,11 +1,4 @@
-const { Game, User, Sketchbook, Page } = require('../../models');
-const { pubsub } = require('../../schema');
-
-jest.mock('../../schema', () => ({
-    pubsub: {
-        publish: jest.fn()
-    }
-}))
+const { Game, User, Sketchbook, Page, GAME_STATUS } = require('../../models');
 
 const mockSave = jest.fn();
 const mockIsOver = jest.fn();
@@ -15,8 +8,9 @@ const mockGameInstance = {
     isOver: mockIsOver,
     currentTurnIsOver: mockTurnIsOver
 }
+const mockPopulate = jest.fn()
 const mockGameQuery = {
-    populate: () => mockGameQuery,
+    populate: mockPopulate,
     then: (resolve) => resolve(mockGameInstance),
 }
 const mockFindById = jest.fn();
@@ -26,66 +20,27 @@ describe('Game', () => {
     beforeEach(() => {
         jest.resetAllMocks();
         mockFindById.mockReturnValue(mockGameQuery)
+        mockPopulate.mockReturnValue(mockGameQuery)
         mockGameInstance.sketchbooks = [];
         mockGameInstance.players = [];
-        mockGameInstance.status = 'new';
+        mockGameInstance.status = GAME_STATUS.NEW;
     })
 
-    describe('publishTimeToSubmit', () => {
-        it('publie TIME_TO_SUBMIT', async () => {
-            await Game.publishTimeToSubmit({_id: 'id', turn: 1}, 1)
-            expect(pubsub.publish).toHaveBeenCalledTimes(1)
-            expect(pubsub.publish).toHaveBeenCalledWith('TIME_TO_SUBMIT', {
-                timeToSubmit: {
-                    id: 'id',
-                    turn: 0
-                }
-            })
-        })
+    describe('findByIdAndPopulate', () => {
+        it('findById + populate sketchbooks and users', async () => {
+            const res = await Game.findByIdAndPopulate('gameId')
+            expect(res).toEqual(mockGameInstance)
 
-        it('appelé 1 seule fois par partie-tour', async () => {
-            await Promise.all([
-                Game.publishTimeToSubmit({_id: 'a', turn: 1}, 0),
-                Game.publishTimeToSubmit({_id: 'a', turn: 1}, 0),
-                Game.publishTimeToSubmit({_id: 'a', turn: 2}, 0),
-                Game.publishTimeToSubmit({_id: 'a', turn: 2}, 0),
-                Game.publishTimeToSubmit({_id: 'b', turn: 3}, 0),
-                Game.publishTimeToSubmit({_id: 'b', turn: 3}, 0),
-            ])
-            expect(pubsub.publish).toHaveBeenCalledTimes(3)
-            expect(pubsub.publish).toHaveBeenNthCalledWith(1, 'TIME_TO_SUBMIT', {
-                timeToSubmit: {
-                    id: 'a',
-                    turn: 0
-                }
-            })
-            expect(pubsub.publish).toHaveBeenNthCalledWith(2, 'TIME_TO_SUBMIT', {
-                timeToSubmit: {
-                    id: 'a',
-                    turn: 1
-                }
-            })
-            expect(pubsub.publish).toHaveBeenNthCalledWith(3, 'TIME_TO_SUBMIT', {
-                timeToSubmit: {
-                    id: 'b',
-                    turn: 2
-                }
-            })
+            expect(mockFindById).toHaveBeenCalledTimes(1)
+            expect(mockFindById).toHaveBeenCalledWith('gameId')
+
+            expect(mockPopulate).toHaveBeenCalledTimes(2)
+            expect(mockPopulate).toHaveBeenNthCalledWith(1, 'sketchbooks')
+            expect(mockPopulate).toHaveBeenNthCalledWith(2, 'players')
         })
     })
 
     describe('checkCompletedTurn', () => {
-        const mockTimeToSubmit = jest.fn();
-        let originalPublishTimeToSubmit;
-        beforeAll(() => {
-            originalPublishTimeToSubmit = Game.publishTimeToSubmit;
-            Game.publishTimeToSubmit = mockTimeToSubmit;
-        })
-
-        afterAll(() => {
-            Game.publishTimeToSubmit = originalPublishTimeToSubmit
-        })
-
         describe('tous les sketchbooks ne sont pas remplis pour le tour', () => {
             it('ne fait rien', async () => {
                 mockTurnIsOver.mockReturnValue(false)
@@ -95,9 +50,7 @@ describe('Game', () => {
                 expect(mockFindById).toHaveBeenCalledTimes(1);
                 expect(mockFindById).toHaveBeenCalledWith(gameId);
 
-                expect(mockTimeToSubmit).toHaveBeenCalledTimes(0);
                 expect(mockSave).toHaveBeenCalledTimes(0);
-                expect(pubsub.publish).toHaveBeenCalledTimes(0);
             })
         })
 
@@ -113,15 +66,15 @@ describe('Game', () => {
                 expect(mockFindById).toHaveBeenCalledTimes(1);
                 expect(mockFindById).toHaveBeenCalledWith(gameId);
 
-                expect(mockTimeToSubmit).toHaveBeenCalledTimes(1);
-                expect(mockTimeToSubmit).toHaveBeenCalledWith(mockGameInstance);
-
                 expect(mockSave).toHaveBeenCalledTimes(1);
-                expect(pubsub.publish).toHaveBeenCalledTimes(1);
-                expect(pubsub.publish).toHaveBeenCalledWith(
-                    'GAME_UPDATE',
-                    { gameUpdate: mockGameInstance }
-                );
+            })
+
+            it('retourne l\'instance du jeu et un flag pour indiquer qu\'on passe au tour suivant', async () => {
+                mockGameInstance.isOver.mockReturnValue(true)
+                const gameId = 'gameId';
+                const result = await Game.checkCompletedTurn(gameId)
+
+                expect(result).toEqual({ isTurnCompleted: true, game: mockGameInstance });
             })
 
             it('le jeu est fini quand chaque sketchbook est passé par chaque joueur', async () => {
@@ -129,7 +82,7 @@ describe('Game', () => {
                 const gameId = 'gameId';
                 await Game.checkCompletedTurn(gameId)
 
-                expect(mockGameInstance.status).toEqual('over');
+                expect(mockGameInstance.status).toEqual(GAME_STATUS.OVER);
             })
 
             it('le jeu n\'est pas fini tant que chaque sketchbook n\'est pas passé par chaque joueur', async () => {
@@ -137,7 +90,7 @@ describe('Game', () => {
                 const gameId = 'gameId';
                 await Game.checkCompletedTurn(gameId)
 
-                expect(mockGameInstance.status).toEqual('new');
+                expect(mockGameInstance.status).toEqual(GAME_STATUS.NEW);
             })
         })
     })
