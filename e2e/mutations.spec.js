@@ -1,12 +1,19 @@
 const { app } = require('../server');
 const request = require('supertest')(app);
-const { dropDatabase, closeConnections } = require('./db');
+const { setupConnection, dropDatabase, closeConnection } = require('./db');
 const { getJwt, authenticatedRequest, endpoint } = require('./helpers');
 
 describe('Graphql Mutations', () => {
-    beforeEach(() => dropDatabase())
+    let connection;
+    let db;
 
-    afterAll(() => closeConnections())
+    beforeAll(async () => {
+        const result = await setupConnection();
+        connection = result.connection;
+        db = result.db;
+    })
+    beforeEach(() => dropDatabase(db))
+    afterAll(() => closeConnection(connection))
 
     describe('createGame', () => {
         it('échoue si l\'utilisateur n\'est pas authentifié', () => {
@@ -46,21 +53,6 @@ describe('Graphql Mutations', () => {
     })
 
     describe('changeGameStatus', () => {
-        const createGame = (jwt) => {
-            const query = `mutation {
-                createGame {
-                    id
-                }
-            }`;
-            return request
-                .post(endpoint)
-                .set('Authorization', `Bearer ${jwt}`)
-                .send({
-                    query
-                })
-                .then((res) => res.body.data.createGame)
-        };
-
         it('n\'accepte pas un statut inconnu', () => {
             const gameId = '5e98298d16c246ba1b613816';
             const query = `mutation {
@@ -97,25 +89,43 @@ describe('Graphql Mutations', () => {
             });
         })
 
+        // FIXME le test provoque un warning de Jest
         it('MaJ du statut', async () => {
+            // given
+            const createGame = async (jwt) => {
+                const query = `mutation {
+                    createGame {
+                        id
+                    }
+                }`;
+                const res = await (request
+                    .post(endpoint)
+                    .set('Authorization', `Bearer ${jwt}`)
+                    .send({
+                        query
+                    }))
+                return res.body.data.createGame;
+            };
             const jwt = await getJwt(request);
             const { id: gameId } = await createGame(jwt);
+
+            // when
             const newStatus = 'active';
             const query = `mutation {
                 changeGameStatus(gameId: "${gameId}", newStatus: ${newStatus}) {
                     status
                 }
             }`
-            const req = request
+            const res = await (request
                 .post(endpoint)
                 .set('Authorization', `Bearer ${jwt}`)
                 .send({
                     query
-                });
-            return req.then(res => {
-                expect(res.status).toEqual(200);
-                expect(res.body.data.changeGameStatus.status).toEqual(newStatus);
-            });
+                }));
+
+            // then
+            expect(res.status).toEqual(200);
+            expect(res.body.data.changeGameStatus.status).toEqual(newStatus);
         })
     })
 

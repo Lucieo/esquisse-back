@@ -1,31 +1,35 @@
 const MongoClient = require('mongodb').MongoClient;
 const mongoose = require('mongoose');
-
-const { MONGO_URI } = process.env;
-const dbName = MONGO_URI.split('/').pop()
-const client = new MongoClient(MONGO_URI, { useNewUrlParser: true });
-const clientIsConnected = client.connect();
-const mongooseIsConnected = mongoose.connect(MONGO_URI, { useNewUrlParser: true });
+const options = {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+}
+const {
+    // @see https://github.com/shelfio/jest-mongodb#3-configure-mongodb-client
+    MONGO_URL
+} = process.env;
 
 module.exports = {
-    dropDatabase: () => {
-        return Promise.all([
-            clientIsConnected,
-            mongooseIsConnected
-        ]).then(err => {
-            return client.db(dbName).dropDatabase();
-        });
+    dropDatabase: async (db) => {
+        await db.dropDatabase();
     },
-    closeConnections: () => {
-        return Promise.all([
-            clientIsConnected,
-            mongooseIsConnected
-        ]).then(() => {
-            return Promise.all([
-                mongoose.disconnect(),
-                client.close()
-            ]);
-        })
+    setupConnection: async () => {
+        const mongoConnection = await MongoClient.connect(MONGO_URL, options);
+        const mongooseConnection = await mongoose.connect(MONGO_URL, options);
+        return {
+            connection: {
+                async close() {
+                    return Promise.all([
+                        mongoConnection.close(),
+                        mongooseConnection.disconnect(),
+                    ])
+                }
+            },
+            db: mongoConnection.db()
+        }
+    },
+    closeConnection: async (connection) => {
+        await connection.close();
     }
 }
 
