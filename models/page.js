@@ -18,7 +18,7 @@ const pageSchema = new Schema({
     },
     createdAt: { 
         type: Date, 
-        expires: 900,
+        expires: 90000,
         default: Date.now
     }
 })
