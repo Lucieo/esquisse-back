@@ -33,7 +33,7 @@ describe('Graphql Mutations', () => {
             expect(res.body.errors[0].message).toMatch("Cannot read property 'id' of null");
         })
 
-        it('retourne l \'id de la partie et la confiugration par défaut', async () => {
+        it('retourne l \'id de la partie et la configuration par défaut', async () => {
             const query = `mutation {
                 createGame {
                     id

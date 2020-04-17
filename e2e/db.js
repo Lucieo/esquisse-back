@@ -6,8 +6,8 @@ const {
 } = process.env;
 
 module.exports = {
-    dropDatabase: async (db) => {
-        await db.dropDatabase();
+    dropDatabase: (db) => {
+        return db.dropDatabase();
     },
     setupConnection: async () => {
         const mongoConnection = await MongoClient.connect(MONGO_URI, MONGOOSE_OPTIONS);
