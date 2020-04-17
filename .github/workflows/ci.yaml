@@ -42,3 +42,4 @@ jobs:
         env:
           CI: true
           MONGO_URI: mongodb://localhost:27017/test
+          SESSION_SECRET: s3cr3t
