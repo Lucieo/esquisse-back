@@ -209,7 +209,7 @@ const resolvers = {
                                 id: gameId.toString()
                             }
                         });
-                    }, DELAY.DRAWING_MODE)
+                    }, 60000)
                 }
                 else if (newStatus === GAME_STATUS.OVER) {
                     SubmitQueue.remove({ gameId });

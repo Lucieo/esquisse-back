@@ -165,7 +165,7 @@ describe('Mutations', () => {
                 Sketchbook.prototype.save = mockSketchbookSave;
                 await changeGameStatus({}, { gameId, newStatus }, { user })
 
-                expect(setTimeout).toHaveBeenCalledWith(expect.any(Function), DELAY.DRAWING_MODE)
+                expect(setTimeout).toHaveBeenCalledWith(expect.any(Function), 60000)
             });
         })
     });
