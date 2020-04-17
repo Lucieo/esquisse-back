@@ -23,21 +23,22 @@ jobs:
         mongodb-version: [4.2]
 
     steps:
-      # - uses: actions/checkout@v2
-      # - name: Use Node.js ${{ matrix.node-version }}
-      #   uses: actions/setup-node@v1
-      #   with:
-      #     node-version: ${{ matrix.node-version }}
-      # - run: npm ci
-      #   timeout-minutes: 2
-      # - run: npm run test:unit
-      #   timeout-minutes: 1
-      #   env:
-      #     CI: true
-      - name: Start Mongo
-        run: mkdir -p /data/db && mongod
-      # - run: npm run test:e2e
-      #   timeout-minutes: 3
-      #   env:
-      #     CI: true
-      #     MONGO_URI: mongodb://localhost:27017/test
+      - uses: actions/checkout@v2
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+      - run: npm ci
+        timeout-minutes: 2
+      - run: npm run test:unit
+        timeout-minutes: 1
+        env:
+          CI: true
+      - run: |
+          sudo mkdir -p /data/db
+          sudo mongod &
+          npm run test:e2e
+        timeout-minutes: 3
+        env:
+          CI: true
+          MONGO_URI: mongodb://localhost:27017/test
