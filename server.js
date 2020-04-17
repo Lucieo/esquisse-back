@@ -8,7 +8,6 @@ const mongoose = require('mongoose');
 var cors = require('cors');
 const jwt = require('jsonwebtoken');
 const { json } = require('express');
-const { gameCleaningJob } = require('./cron-jobs')
 const debug = require('debug')('esquisse:server');
 
 const app = express();
@@ -20,11 +19,6 @@ const {
 } = process.env;
 debug(MONGO_URI)
 debug(process.env.FRONT_URL)
-// const corsOptions = {
-//     origin: process.env.FRONT_URL,
-//     credentials: true,
-//   };
-// app.use(cors(corsOptions));
 
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -79,8 +73,6 @@ if (require.main === module) {
   server.applyMiddleware({ app })
   const httpServer = http.createServer(app);
   server.installSubscriptionHandlers(httpServer);
-
-  //gameCleaningJob();
 
   mongoose
     .connect(MONGO_URI)
