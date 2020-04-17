@@ -7,29 +7,39 @@ on:
   push:
     branches:
       - master
-      - 'feat/**'
+      - "feat/**"
   pull_request:
     branches:
       - master
-      - 'feat/**'
+      - "feat/**"
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     strategy:
       matrix:
         node-version: [12.x]
+        mongodb-version: [4.2]
 
     steps:
-    - uses: actions/checkout@v2
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v1
-      with:
-        node-version: ${{ matrix.node-version }}
-    - run: npm ci
-    - run: npm run build --if-present
-    - run: npm test
-      env:
-        CI: true
+      - uses: actions/checkout@v2
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+      # - name: Start MongoDB v${{ matrix.mongodb-version }}
+      #   uses: supercharge/mongodb-github-action@1.2.0
+      #   with:
+      #     mongodb-version: ${{ matrix.mongodb-version }}
+      - run: npm ci
+        timeout-minutes: 2
+      - run: npm run test:unit
+        timeout-minutes: 1
+        env:
+          CI: true
+      # - run: npm run test:e2e
+      #   timeout-minutes: 3
+      #   env:
+      #     CI: true
+      #     MONGO_URI: mongodb://localhost:27017/test

@@ -1,6 +1,6 @@
 const { app } = require('../server');
 const request = require('supertest')(app);
-const endpoint = '/graphql';
+const { authenticatedRequest, endpoint } = require('./helpers');
 
 describe('Graphql Queries', () => {
     it('POST requires a body', () => {

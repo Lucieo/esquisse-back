@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const debug = require('debug')('esquisse:game');
-const { DEFAULT_MODEL_EXPIRATION } = require('../config')
+const { DEFAULT_MODEL_EXPIRATION, DELAY } = require('../config')
 
 const GAME_STATUS = {
     OVER: "over",
@@ -21,7 +21,10 @@ const gameSchema = new Schema({
     },
     status: {
         type: String,
-        default: GAME_STATUS.NEW
+        default: GAME_STATUS.NEW,
+        enum: [
+            ...Object.values(GAME_STATUS)
+        ],
     },
     sketchbooks: [{
         type: Schema.Types.ObjectId,
@@ -35,6 +38,22 @@ const gameSchema = new Schema({
         type: Date,
         expires: DEFAULT_MODEL_EXPIRATION,
         default: Date.now
+    },
+    configuration: {
+        timers: {
+            init: {
+                type: Number,
+                default: DELAY.INIT
+            },
+            guessing: {
+                type: Number,
+                default: DELAY.GUESSING_MODE
+            },
+            drawing: {
+                type: Number,
+                default: DELAY.DRAWING_MODE
+            }
+        }
     }
 })
 
@@ -80,14 +99,12 @@ gameSchema.statics.checkCompletedTurn = async function (gameId) {
             game
         };
     }
-
-    debug('ALL RESPONSES RECEIVED CALLED FROM GAME STATIC METHOD')
     game.turn = (+game.turn + 1)
     if (game.isOver()) {
         game.status = GAME_STATUS.OVER;
     }
     await game.save()
-    debug('ALL RESPONSES RECEIVED DONE')
+    debug('checkCompletedTurn done')
     return { isTurnCompleted: true, game };
 }
 

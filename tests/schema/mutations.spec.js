@@ -133,7 +133,14 @@ describe('Mutations', () => {
                     status: 'new',
                     save: mockGameSave,
                     players,
-                    sketchbooks: []
+                    sketchbooks: [],
+                    configuration: {
+                        timers: {
+                            init: 0,
+                            drawing: 1,
+                            guessing: 2
+                        }
+                    }
                 };
                 const newStatus = 'active';
                 const user = {
@@ -155,7 +162,14 @@ describe('Mutations', () => {
                     status: 'new',
                     save: mockGameSave,
                     players,
-                    sketchbooks: []
+                    sketchbooks: [],
+                    configuration: {
+                        timers: {
+                            init: 0,
+                            guessing: 1,
+                            drawing: 2
+                        }
+                    },
                 };
                 const newStatus = 'active';
                 const user = {
@@ -165,7 +179,10 @@ describe('Mutations', () => {
                 Sketchbook.prototype.save = mockSketchbookSave;
                 await changeGameStatus({}, { gameId, newStatus }, { user })
 
-                expect(setTimeout).toHaveBeenCalledWith(expect.any(Function), DELAY.DRAWING_MODE)
+                expect(setTimeout).toHaveBeenCalledWith(
+                    expect.any(Function),
+                    game.configuration.timers.init
+                )
             });
         })
     });
@@ -175,7 +192,17 @@ describe('Mutations', () => {
         const content = 'fake-content';
         const pageType = 'pageType';
         const gameId = 'gameId';
-        const game = { _id: gameId, turn: 1 };
+        const game = {
+            _id: gameId,
+            turn: 1,
+            configuration: {
+                timers: {
+                    init: 0,
+                    guessing: 1,
+                    drawing: 2
+                }
+            },
+        };
         const user = {
             name: 'fake-user'
         }
@@ -237,7 +264,10 @@ describe('Mutations', () => {
             const result = await submitPage({}, { sketchbookId, content, pageType, gameId}, { user })
             expect(result).toEqual({ id: 1 })
 
-            expect(setTimeout).toHaveBeenCalledWith(expect.any(Function), DELAY.DRAWING_MODE)
+            expect(setTimeout).toHaveBeenCalledWith(
+                expect.any(Function),
+                game.configuration.timers.drawing
+            )
         })
 
         it('si le tour est fini, lance un évènement GAME_UPDATE', async () => {

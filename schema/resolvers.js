@@ -12,12 +12,11 @@ const {
     GAME_STATUS
 } = require('../models');
 const pubsub = require('./pubsub');
-const { DELAY } = require('../config')
 
 const cacheKeyResolver = ({ gameId, turn }) => `${gameId}-${turn}`;
 const memoizedPublishTimeToSubmit = _.memoize(({ gameId, turn }, delay = 60000) => {
+    debug(`memoizedPublishTimeToSubmit with delay=${delay}`)
     return new Promise((resolve) => {
-        debug("DELAY", delay)
         setTimeout(() => {
             pubsub.publish("TIME_TO_SUBMIT", {
                 timeToSubmit: {
@@ -31,18 +30,6 @@ const memoizedPublishTimeToSubmit = _.memoize(({ gameId, turn }, delay = 60000) 
         }, delay);
     })
 }, cacheKeyResolver)
-
-// Est ce qu'on devrait attendre la fin de l'exécution de cette fonction ?
-const checkCompletedTurn = async (gameId) => {
-    const { isTurnCompleted, game } = await Game.checkCompletedTurn(gameId)
-    if (isTurnCompleted) {
-        pubsub.publish("GAME_UPDATE", { gameUpdate: game });
-        const delay = game.isCurrentlyInGuessingMode
-            ? DELAY.GUESSING_MODE
-            : DELAY.DRAWING_MODE;
-        memoizedPublishTimeToSubmit({ gameId, turn: game.turn }, delay);
-    }
-}
 
 const resolvers = {
     Query: {
@@ -139,15 +126,14 @@ const resolvers = {
             user.save();
             return user;
         },
-        createGame: (parent, { }, context) => {
+        createGame: (parent, { configuration }, context) => {
             const game = new Game({
                 creator: context.user.id,
-                players: [context.user.id]
+                players: [context.user.id],
+                configuration
             });
             game.save();
-            return {
-                id: game.id
-            };
+            return game;
         },
         joinGame: async (parent, { gameId }, context) => {
             const game = await Game.findById(gameId).populate('players');
@@ -190,6 +176,9 @@ const resolvers = {
         },
         changeGameStatus: async (parent, { gameId, newStatus }, { user }) => {
             const game = await Game.findByIdAndPopulate(gameId);
+            if (!game) {
+                throw new Error('Entity Not Found');
+            }
             if (game.status !== newStatus && user.isCreator(game)) {
                 game.status = newStatus;
                 if (newStatus === GAME_STATUS.ACTIVE) {
@@ -209,7 +198,7 @@ const resolvers = {
                                 id: gameId.toString()
                             }
                         });
-                    }, DELAY.DRAWING_MODE)
+                    }, game.configuration.timers.init)
                 }
                 else if (newStatus === GAME_STATUS.OVER) {
                     SubmitQueue.remove({ gameId });
@@ -239,7 +228,14 @@ const resolvers = {
                 await sketchbook.save();
             }
 
-            await checkCompletedTurn(gameId);
+            const { isTurnCompleted, game } = await Game.checkCompletedTurn(gameId)
+            if (isTurnCompleted) {
+                pubsub.publish("GAME_UPDATE", { gameUpdate: game });
+                const delay = game.isCurrentlyInGuessingMode
+                    ? game.configuration.timers.guessing
+                    : game.configuration.timers.drawing;
+                memoizedPublishTimeToSubmit({ gameId, turn: game.turn }, delay);
+            }
 
             return {
                 id: page.id

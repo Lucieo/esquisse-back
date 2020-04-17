@@ -1,14 +1,12 @@
 const { ApolloServer } = require('apollo-server-express');
 const express = require('express');
-const {
-  User,
-} = require('./models');
 const { typeDefs, resolvers } = require('./schema');
+const getUser = require('./authentication/get-user');
 const mongoose = require('mongoose');
 var cors = require('cors');
-const jwt = require('jsonwebtoken');
 const { json } = require('express');
 const debug = require('debug')('esquisse:server');
+const { MONGOOSE_OPTIONS } = require('./config');
 
 const app = express();
 
@@ -33,19 +31,6 @@ app.use((req, res, next) => {
   next();
 });
 
-const getUser = async (token) => {
-  try {
-    if (token) {
-      const id = jwt.verify(token.split(' ')[1], process.env.SESSION_SECRET).id
-      const user = await User.findById(id);
-      return user
-    }
-    return null
-  } catch (err) {
-    return null
-  }
-}
-
 const server = new ApolloServer({
   typeDefs,
   resolvers,
@@ -55,10 +40,10 @@ const server = new ApolloServer({
     }
     else {
       const token = req.headers.authorization || '';
-      const user = await getUser(token)
+      const user = await getUser(token);
       return {
         user
-      }
+      };
     }
   },
   playground: {
@@ -72,7 +57,6 @@ const server = new ApolloServer({
 server.applyMiddleware({ app })
 
 module.exports = {
-  getUser,
   app
 }
 
@@ -83,7 +67,7 @@ if (require.main === module) {
   server.installSubscriptionHandlers(httpServer);
 
   mongoose
-    .connect(MONGO_URI)
+    .connect(MONGO_URI, MONGOOSE_OPTIONS)
     .then(result => {
       httpServer.listen({ port: process.env.PORT || 4000 }, ()=>debug(`🚀 Server ready`))
     })
