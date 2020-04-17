@@ -35,7 +35,7 @@ jobs:
         env:
           CI: true
       - name: Start Mongo
-        run: mongod
+        run: mkdir -p /data/db && mongod
       # - run: npm run test:e2e
       #   timeout-minutes: 3
       #   env:
