@@ -13,10 +13,15 @@ describe('Graphql Mutations', () => {
         connection = result.connection;
         db = result.db;
     })
-    beforeEach(() => dropDatabase(db))
-    afterAll(() => closeConnection(connection))
+
+    afterAll(() => Promise.all([
+        closeConnection(connection),
+        dropDatabase(db, 'AFTER_ALL')
+    ]))
 
     describe('createGame', () => {
+        beforeEach(() => dropDatabase(db))
+
         it('échoue si l\'utilisateur n\'est pas authentifié', async () => {
             const query = `mutation {
                 createGame {
@@ -71,8 +76,10 @@ describe('Graphql Mutations', () => {
                 }
             }`;
 
-            const decoratedRequest = await authenticatedRequest(request)
-            const res = await (decoratedRequest()
+            const jwt = await getJwt(request);
+            const res = await (request
+                .post(endpoint)
+                .set('Authorization', `Bearer ${jwt}`)
                 .send({
                     query
                 }));
@@ -86,6 +93,8 @@ describe('Graphql Mutations', () => {
     })
 
     describe('changeGameStatus', () => {
+        beforeEach(() => dropDatabase(db))
+
         it('n\'accepte pas un statut inconnu', async () => {
             const gameId = '5e98298d16c246ba1b613816';
             const query = `mutation {
@@ -123,7 +132,7 @@ describe('Graphql Mutations', () => {
 
         // FIXME le test provoque un warning de Jest
         // peut-être du aux "setTimeout" dans les resolvers
-        it('MaJ du statut', async () => {
+        xit('MaJ du statut', async () => {
             // given
             const createGame = async (jwt) => {
                 const query = `mutation {

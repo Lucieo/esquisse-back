@@ -4,10 +4,13 @@ const { MONGOOSE_OPTIONS } = require('../config')
 const {
     MONGO_URI
 } = process.env;
+const debug = require('debug')('esquisse:e2e:db');
 
 module.exports = {
-    dropDatabase: (db) => {
-        return db.dropDatabase();
+    dropDatabase: (db, logInfo) => {
+        const result = db.dropDatabase();
+        debug(result, logInfo)
+        return result;
     },
     setupConnection: async () => {
         const mongoConnection = await MongoClient.connect(MONGO_URI, MONGOOSE_OPTIONS);
