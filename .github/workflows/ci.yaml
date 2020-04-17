@@ -34,7 +34,8 @@ jobs:
         timeout-minutes: 1
         env:
           CI: true
-      - run: mongo
+      - name: Start Mongo
+        run: mongod
       # - run: npm run test:e2e
       #   timeout-minutes: 3
       #   env:
