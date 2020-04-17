@@ -5,8 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "npm run test:unit && npm run test:e2e",
-    "test:unit": "jest --testMatch '**/tests/**/*.spec.js'",
-    "test:e2e": "jest --testMatch '**/e2e/**/*.spec.js'",
+    "test:unit": "jest --watch --testMatch '**/tests/**/*.spec.js'",
+    "test:e2e": "jest --watch --testMatch '**/e2e/**/*.spec.js'",
     "start": "node server.js",
     "start-server": "node server.js",
     "start-dev": "node -r dotenv/config ./node_modules/.bin/nodemon server.js"
