@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const debug = require('debug')('esquisse:game');
-const { DEFAULT_MODEL_EXPIRATION } = require('../config')
+const { DEFAULT_MODEL_EXPIRATION, DELAY } = require('../config')
 
 const GAME_STATUS = {
     OVER: "over",
@@ -38,6 +38,22 @@ const gameSchema = new Schema({
         type: Date,
         expires: DEFAULT_MODEL_EXPIRATION,
         default: Date.now
+    },
+    configuration: {
+        timers: {
+            init: {
+                type: Number,
+                default: DELAY.INIT
+            },
+            guessing: {
+                type: Number,
+                default: DELAY.GUESSING_MODE
+            },
+            drawing: {
+                type: Number,
+                default: DELAY.DRAWING_MODE
+            }
+        }
     }
 })
 

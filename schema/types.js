@@ -26,6 +26,22 @@ type Page{
     pageType: String
     creator: User
 }
+type GameTimers {
+    init: Int
+    guessing: Int
+    drawing: Int
+}
+input GameTimersInput {
+    init: Int
+    guessing: Int
+    drawing: Int
+}
+type GameConfig {
+    timers: GameTimers!
+}
+input GameConfigInput {
+    timers: GameTimersInput!
+}
 type Game{
     id: ID
     status: String
@@ -33,9 +49,12 @@ type Game{
     players: [User]
     sketchbooks: [Sketchbook]
     turn: Int
+    configuration: GameConfig!
 }
+
 type CreatedGame {
-    id:ID
+    id: ID
+    configuration: GameConfig!
 }
 type PlayerModifyResponse{
     players: [User],
@@ -71,7 +90,7 @@ type Mutation {
     signup(name: String!, email: String!, password: String!): User!
     login(email: String!, password: String!): LoginResponse!
     modifyUser(name: String!, icon: String!, iconColor: String!): User!
-    createGame: CreatedGame
+    createGame(configuration: GameConfigInput): CreatedGame
     joinGame(gameId: ID!): Game
     leaveGame(gameId: ID!): Game
     changeGameStatus(gameId: ID!, newStatus: GameStatus!): Game
