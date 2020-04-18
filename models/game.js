@@ -28,7 +28,7 @@ const gameSchema = new Schema({
     },
     createdAt: { 
         type: Date, 
-        expires: 90000,
+        expires: 7200,
         default: Date.now 
     }
 })
