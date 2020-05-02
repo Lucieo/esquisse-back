@@ -205,8 +205,8 @@ const resolvers = {
                     }, 60000);
                 }
                 game.save();
+                pubsub.publish("GAME_UPDATE", { gameUpdate: game });
             }
-            pubsub.publish("GAME_UPDATE", { gameUpdate: game });
             return game;
         },
         submitPage: async (
