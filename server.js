@@ -63,6 +63,7 @@ const server = new ApolloServer({
             "request.credentials": "same-origin",
         },
     },
+    keepAlive: 10000,
     introspection: true,
 });
 
