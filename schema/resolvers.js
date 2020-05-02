@@ -183,6 +183,7 @@ const resolvers = {
             const game = await Game.findById(gameId)
                 .populate("players")
                 .populate("sketchbooks");
+            process.stdout.write("HELLO NEW GAME");
             if (
                 game.status !== newStatus &&
                 context.user.id === game.creator.toString()
