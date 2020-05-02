@@ -243,43 +243,9 @@ const resolvers = {
             };
         },
         debugGame: async (parent, { gameId }, context) => {
-            let game = await Game.findById(gameId)
-                .populate("sketchbooks")
-                .populate("players");
-
-            const debugUser = await User.findOne({ email: "debug@test.com" });
-            if (!game.currentTurnIsOver()) {
-                //Responses are missing game is blocked - fill blanks
-                const pageType = game.turn % 2 === 0 ? "guessing" : "drawing";
-                game.sketchbooks.map(async (sketchbook) => {
-                    if (sketchbook.pages.length < +game.turn + 1) {
-                        let content = "";
-                        const currentIndex = sketchbook.pages.length - 1;
-                        if (currentIndex - 2 > 0) {
-                            content = sketchbook.pages[currentIndex - 2];
-                        }
-                        const sketchbookRecord = await Sketchbook.findById(
-                            sketchbook._id
-                        );
-                        const emptyPage = new Page({
-                            pageType,
-                            content,
-                            sketchbook: sketchbook._id,
-                            creator: debugUser,
-                        });
-                        await emptyPage.save();
-                        sketchbookRecord.pages.push(emptyPage);
-                        await sketchbookRecord.save();
-                    }
-                    return sketchbook;
-                });
-                if (+game.turn + 1 >= game.players.length) {
-                    game.status = "over";
-                }
-                game.turn = +game.turn + 1;
-                await game.save();
-            }
-            game = await Game.findById(gameId)
+            console.log("DEBUG GAME", gameId);
+            Game.checkCompletedTurn(gameId);
+            const game = await Game.findById(gameId)
                 .populate("sketchbooks")
                 .populate("players");
             pubsub.publish("GAME_UPDATE", { gameUpdate: game });
