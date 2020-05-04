@@ -9,6 +9,7 @@ const jwt = require("jsonwebtoken");
 const { withFilter } = require("apollo-server-express");
 const pubsub = require("./pubsub");
 const debug = require("debug")("esquisse:resolvers");
+const { fillBlanks } = require("../utils");
 
 const resolvers = {
     Date: new GraphQLScalarType({
@@ -189,7 +190,7 @@ const resolvers = {
             ) {
                 game.status = newStatus;
                 if (newStatus === "active") {
-                    game.players.forEach((creator) => {
+                    game.players.forEach(async (creator) => {
                         const sketchbook = new Sketchbook({
                             creator,
                             gameId,
@@ -197,15 +198,19 @@ const resolvers = {
                         sketchbook.save();
                         game.sketchbooks.push(sketchbook);
                     });
-                    game.timer = new Date();
+                    const delay = process.env.MODE === "TEST" ? 15000 : 60000;
+                    const timer = new Date();
+                    timer.setSeconds(timer.getSeconds() + delay / 1000 + 1);
+                    game.timer = timer;
+                    game.delay = delay;
+                    await game.save();
+                    pubsub.publish("GAME_UPDATE", { gameUpdate: game });
                     setTimeout(() => {
                         pubsub.publish("TIME_TO_SUBMIT", {
                             timeToSubmit: { id: gameId },
                         });
-                    }, 60000);
+                    }, delay);
                 }
-                game.save();
-                pubsub.publish("GAME_UPDATE", { gameUpdate: game });
             }
             return game;
         },
@@ -220,7 +225,6 @@ const resolvers = {
                 sketchbook: sketchbookId,
             });
             if (!pageExists) {
-                debug("NO PAGE FOUND GO AHEAD SAVE NEW ONE");
                 const page = new Page({
                     content,
                     pageType,
@@ -228,28 +232,26 @@ const resolvers = {
                     sketchbook: sketchbookId,
                 });
                 await page.save();
-                debug("NEW PAGE HAS BEEN SAVED FOR CONTENT ", content);
                 sketchbook.pages.push(page);
                 await sketchbook.save();
 
                 return {
                     id: page.id,
                 };
-            } else {
-                Game.checkCompletedTurn(gameId);
             }
             return {
                 id: null,
             };
         },
         debugGame: async (parent, { gameId }, context) => {
-            console.log("DEBUG GAME", gameId);
-            Game.checkCompletedTurn(gameId);
             const game = await Game.findById(gameId)
                 .populate("sketchbooks")
                 .populate("players");
-            pubsub.publish("GAME_UPDATE", { gameUpdate: game });
-            return { gameId };
+            if (!game.currentTurnIsOver() && !game.isNewTurn()) {
+                await fillBlanks(game);
+            }
+            Game.checkCompletedTurn(gameId, (mode = "debug"));
+            return { id: gameId };
         },
     },
     Subscription: {

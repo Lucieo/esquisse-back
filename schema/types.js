@@ -32,7 +32,7 @@ const typeDefs = gql`
         turn: Int
         timer: Date
     }
-    type CreatedGame {
+    type IdResponse {
         id: ID
     }
     type PlayerModifyResponse {
@@ -40,15 +40,9 @@ const typeDefs = gql`
         gameId: ID
         creator: ID
     }
-    type submitPageResponse {
-        id: ID
-    }
     type allGamesResponse {
         sketchbooks: [Sketchbook]
         id: ID
-    }
-    type debugGameResponse {
-        gameId: ID
     }
     type Query {
         currentUser: User!
@@ -61,7 +55,7 @@ const typeDefs = gql`
         signup(name: String!, email: String!, password: String!): User!
         login(email: String!, password: String!): LoginResponse!
         modifyUser(name: String!, icon: String!, iconColor: String!): User!
-        createGame: CreatedGame
+        createGame: IdResponse
         joinGame(gameId: ID!): Game
         leaveGame(gameId: ID!): Game
         changeGameStatus(gameId: ID!, newStatus: String!): Game
@@ -70,13 +64,13 @@ const typeDefs = gql`
             gameId: ID!
             content: String!
             pageType: String!
-        ): submitPageResponse!
-        debugGame(gameId: ID!): debugGameResponse
+        ): IdResponse!
+        debugGame(gameId: ID!): IdResponse
     }
     type Subscription {
         playerUpdate(gameId: ID!): PlayerModifyResponse
         gameUpdate(gameId: ID!): Game
-        timeToSubmit(gameId: ID!): submitPageResponse
+        timeToSubmit(gameId: ID!): IdResponse
     }
 `;
 

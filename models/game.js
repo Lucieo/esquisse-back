@@ -34,6 +34,10 @@ const gameSchema = new Schema({
         type: Date,
         required: false,
     },
+    delay: {
+        type: Number,
+        default: 0,
+    },
     createdAt: {
         type: Date,
         expires: 7200,
@@ -42,10 +46,15 @@ const gameSchema = new Schema({
 });
 
 gameSchema.methods.currentTurnIsOver = function () {
-    const turnCount = +this.turn + 1;
-    return this.sketchbooks.every(
-        (sketchbook) => sketchbook.pages.length >= turnCount
-    );
+    return this.sketchbooks.every((sketchbook) => {
+        return sketchbook.pages.length > +this.turn;
+    });
+};
+
+gameSchema.methods.isNewTurn = function () {
+    return this.sketchbooks.every((sketchbook) => {
+        sketchbook.pages.length === +this.turn - 1;
+    });
 };
 
 gameSchema.methods.isOver = function () {
@@ -53,10 +62,9 @@ gameSchema.methods.isOver = function () {
 };
 
 const cacheKeyResolver = ({ _id, turn }) => `${_id}-${turn}`;
-const memoizedPublishTimeToSubmit = _.memoize(({ _id, turn }) => {
+const memoizedPublishTimeToSubmit = _.memoize(({ _id, turn, delay }) => {
     return new Promise((resolve) => {
         //Odd means drawing mode - Even means guessing mode
-        const delay = turn % 2 == 0 ? 60000 : 90000;
         setTimeout(() => {
             pubsub.publish("TIME_TO_SUBMIT", {
                 timeToSubmit: {
@@ -73,21 +81,30 @@ const memoizedPublishTimeToSubmit = _.memoize(({ _id, turn }) => {
 }, cacheKeyResolver);
 gameSchema.statics.publishTimeToSubmit = memoizedPublishTimeToSubmit;
 
-gameSchema.statics.checkCompletedTurn = async function (gameId) {
+gameSchema.statics.checkCompletedTurn = async function (gameId, mode) {
     const game = await this.findById(gameId)
         .populate("sketchbooks")
         .populate("players");
 
     if (game.currentTurnIsOver()) {
-        debug("ALL RESPONSES RECEIVED CALLED FROM GAME STATIC METHOD");
         game.turn = +game.turn + 1;
-        if (game.isOver()) {
-            game.status = "over";
+        if (process.env.MODE !== "TEST") {
+            if (game.isOver()) {
+                game.status = "over";
+            }
         }
-        game.timer = new Date();
+        let delay;
+        if (process.env.MODE === "TEST") {
+            delay = game.turn % 2 == 0 ? 15000 : 15000;
+        } else {
+            delay = game.turn % 2 == 0 ? 60000 : 90000;
+        }
+        const timer = new Date();
+        timer.setSeconds(timer.getSeconds() + delay / 1000 + 1);
+        game.timer = timer;
+        game.delay = delay;
         await game.save();
         pubsub.publish("GAME_UPDATE", { gameUpdate: game });
-        debug("ALL RESPONSES RECEIVED DONE");
         this.publishTimeToSubmit(game);
     }
 };
