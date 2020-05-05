@@ -67,13 +67,10 @@ const server = new ApolloServer({
     introspection: true,
 });
 
-app.get("/", (req, res) => {
-    return res.send("Hello");
-});
 module.exports = {
     getUser,
 };
-console.log("MODE IS", process.env.MODE);
+
 if (require.main === module) {
     const http = require("http");
     server.applyMiddleware({ app });

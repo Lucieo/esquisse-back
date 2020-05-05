@@ -9,7 +9,7 @@ const jwt = require("jsonwebtoken");
 const { withFilter } = require("apollo-server-express");
 const pubsub = require("./pubsub");
 const debug = require("debug")("esquisse:resolvers");
-const { fillBlanks } = require("../utils");
+const { initializeGame } = require("../utils");
 
 const resolvers = {
     Date: new GraphQLScalarType({
@@ -188,70 +188,24 @@ const resolvers = {
                 game.status !== newStatus &&
                 context.user.id === game.creator.toString()
             ) {
-                game.status = newStatus;
                 if (newStatus === "active") {
-                    game.players.forEach(async (creator) => {
-                        const sketchbook = new Sketchbook({
-                            creator,
-                            gameId,
-                        });
-                        sketchbook.save();
-                        game.sketchbooks.push(sketchbook);
-                    });
-                    const delay = process.env.MODE === "TEST" ? 15000 : 60000;
-                    const timer = new Date();
-                    timer.setSeconds(timer.getSeconds() + delay / 1000 + 1);
-                    game.timer = timer;
-                    game.delay = delay;
+                    await initializeGame(game, newStatus, gameId);
+                } else if (newStatus === "over") {
+                    game.status = "over";
                     await game.save();
                     pubsub.publish("GAME_UPDATE", { gameUpdate: game });
-                    setTimeout(() => {
-                        pubsub.publish("TIME_TO_SUBMIT", {
-                            timeToSubmit: { id: gameId },
-                        });
-                    }, delay);
                 }
             }
             return game;
         },
-        submitPage: async (
-            parent,
-            { sketchbookId, content, pageType, gameId },
-            { user }
-        ) => {
-            const sketchbook = await Sketchbook.findById(sketchbookId);
-            const pageExists = await Page.findOne({
-                creator: user,
-                sketchbook: sketchbookId,
-            });
-            if (!pageExists) {
-                const page = new Page({
-                    content,
-                    pageType,
-                    creator: user,
-                    sketchbook: sketchbookId,
-                });
-                await page.save();
-                sketchbook.pages.push(page);
-                await sketchbook.save();
-
-                return {
-                    id: page.id,
-                };
-            }
+        submitPage: async (parent, { pageId, content }, { user }) => {
+            const page = await Page.findById(pageId);
+            page.creator = user;
+            page.content = content;
+            await page.save();
             return {
-                id: null,
+                id: pageId,
             };
-        },
-        debugGame: async (parent, { gameId }, context) => {
-            const game = await Game.findById(gameId)
-                .populate("sketchbooks")
-                .populate("players");
-            if (!game.currentTurnIsOver() && !game.isNewTurn()) {
-                await fillBlanks(game);
-            }
-            Game.checkCompletedTurn(gameId, (mode = "debug"));
-            return { id: gameId };
         },
     },
     Subscription: {

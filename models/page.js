@@ -1,27 +1,24 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
 const pageSchema = new Schema({
     creator: {
         type: Schema.Types.ObjectId,
-        ref: 'User'
+        ref: "User",
+        default: null,
     },
-    pageType:{
-        type: String
+    pageType: {
+        type: String,
     },
-    content:{
-        type: String
+    content: {
+        type: String,
+        default: "",
     },
-    sketchbook:{
-        type: Schema.Types.ObjectId,
-        ref: 'Sketchbook'
-    },
-    createdAt: { 
-        type: Date, 
+    createdAt: {
+        type: Date,
         expires: 7200,
-        default: Date.now
-    }
-})
+        default: Date.now,
+    },
+});
 
-
-module.exports = mongoose.model('Page', pageSchema)
+module.exports = mongoose.model("Page", pageSchema);

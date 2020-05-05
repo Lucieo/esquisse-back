@@ -25,12 +25,4 @@ const sketchBookSchema = new Schema({
     },
 });
 
-sketchBookSchema.post("save", async function (doc) {
-    debug("PRE SAVE FROM SKETCHBOOK");
-    if (this.pages.length > 0) {
-        console.log("pre save sketchbook launc check completed turn");
-        Game.checkCompletedTurn(doc.gameId);
-    }
-});
-
 module.exports = mongoose.model("Sketchbook", sketchBookSchema);

@@ -19,6 +19,7 @@ const typeDefs = gql`
         pages: [Page]
     }
     type Page {
+        id: ID
         content: String
         pageType: String
         creator: User
@@ -59,13 +60,7 @@ const typeDefs = gql`
         joinGame(gameId: ID!): Game
         leaveGame(gameId: ID!): Game
         changeGameStatus(gameId: ID!, newStatus: String!): Game
-        submitPage(
-            sketchbookId: ID!
-            gameId: ID!
-            content: String!
-            pageType: String!
-        ): IdResponse!
-        debugGame(gameId: ID!): IdResponse
+        submitPage(pageId: ID!, content: String!): IdResponse!
     }
     type Subscription {
         playerUpdate(gameId: ID!): PlayerModifyResponse
